@@ -1,0 +1,14 @@
+{
+  "name": "ai-ems-fetcher",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Holt Strompreise (energy-charts.info) und EKZ-Tarife als JSON-Snapshots",
+  "scripts": {
+    "fetch": "node fetch-data.mjs",
+    "loop": "node fetch-data.mjs --loop"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
