@@ -1,0 +1,19 @@
+# Produktiv-Overlay – wird von Argo CD synchronisiert.
+# Die Image-Tags setzt die GitHub Action bei jedem Push auf main (Commit-SHA).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ai-ems
+resources:
+  - namespace.yaml
+  - ../../base
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: ai-ems
+      environment: production
+images:
+  - name: ghcr.io/aaron04648/ai-ems-web
+    newTag: latest
+  - name: ghcr.io/aaron04648/ai-ems-fetcher
+    newTag: latest
+  - name: ghcr.io/aaron04648/ai-ems-api
+    newTag: latest

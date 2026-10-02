@@ -1,0 +1,36 @@
+# Prüft Pull Requests: Angular-Build und beide Docker-Images (ohne Push)
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Angular-Build
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npx ng build --configuration production
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Backend-Tests
+        working-directory: api
+        run: |
+          pip install -r requirements.txt pytest
+          python -m pytest -q tests
+      - name: Docker-Images bauen
+        run: |
+          docker build -t ai-ems-web:ci web
+          docker build -t ai-ems-fetcher:ci fetcher
+          docker build -t ai-ems-api:ci api
+      - name: Kubernetes-Manifeste rendern
+        run: kubectl kustomize k8s/overlays/prod > /dev/null

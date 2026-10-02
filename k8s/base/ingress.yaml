@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-ems
+  labels:
+    app.kubernetes.io/name: ai-ems
+  annotations:
+    # MPC-Simulationen dauern bis ~1 min
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ai-ems.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-ems
+                port:
+                  name: http
