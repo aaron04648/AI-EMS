@@ -10,14 +10,15 @@
 
 | Name | Major task |
 |--------|------------|
-| Student 1 |            |
-| Student 2 |            |
-| Student 3 |            |
+| Student 1 |  Aaron Stupf          |
+| Student 2 |  Sebastian Lischer          |
+
 
 
 ### Project Name
 
-> ⚠️ **Deliverable - 15.10.2026:** Define a project name.
+> Intelligent EMS
+> 
 
 ### Pitch
 
