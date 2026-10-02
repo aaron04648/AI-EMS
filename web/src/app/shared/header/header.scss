@@ -1,0 +1,130 @@
+@use 'tokens' as *;
+
+.header {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 100;
+  height: $header-height;
+  background: rgba(251, 251, 253, 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: border-color $transition-base, background-color $transition-base;
+
+  &--scrolled {
+    border-bottom-color: $color-gray-200;
+  }
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.header__logo {
+  color: $color-ink;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: $spacing-6;
+
+  a {
+    font-size: $text-sm;
+    color: $color-ink;
+    opacity: 0.85;
+    transition: opacity $transition-base, color $transition-base;
+
+    &:hover {
+      opacity: 1;
+      text-decoration: none;
+    }
+
+    &.is-active {
+      color: $color-accent;
+      opacity: 1;
+    }
+  }
+}
+
+.header__cta {
+  padding: $spacing-1 $spacing-4;
+  border-radius: $radius-full;
+  background: $color-accent;
+  color: $color-white !important;
+  opacity: 1 !important;
+
+  &:hover {
+    background: $color-accent-hover;
+  }
+}
+
+.header__burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  span {
+    display: block;
+    height: 1.5px;
+    width: 20px;
+    margin-inline: auto;
+    background: $color-ink;
+    transition: transform $transition-base;
+  }
+}
+
+@media (max-width: #{$bp-md - 1px}) {
+  .header__burger {
+    display: flex;
+  }
+
+  .header__nav {
+    position: fixed;
+    top: $header-height;
+    inset-inline: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-5;
+    padding: $spacing-6 $spacing-5 $spacing-8;
+    background: rgba(251, 251, 253, 0.97);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid $color-gray-200;
+    transform: translateY(-8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity $transition-base, transform $transition-base, visibility $transition-base;
+
+    a {
+      font-size: $text-lg;
+    }
+  }
+
+  .header--open .header__nav {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .header--open .header__burger span:first-child {
+    transform: translateY(4.25px) rotate(45deg);
+  }
+
+  .header--open .header__burger span:last-child {
+    transform: translateY(-4.25px) rotate(-45deg);
+  }
+}
