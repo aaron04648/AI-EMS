@@ -1,0 +1,179 @@
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="container hero__inner">
+    <span class="eyebrow" appReveal="fade">Dynamische Stromtarife · Schweiz &amp; Europa</span>
+    <h1 class="display" appReveal [revealDelay]="100">
+      Strom kostet nicht<br class="hero__break" />
+      immer gleich viel.
+    </h1>
+    <p class="lead" appReveal [revealDelay]="250">
+      Seit 2026 bietet EKZ einen Tarif an, der sich jede Viertelstunde ändert. Wir zeigen, warum
+      Strompreise steigen und sinken – und wie viel Sie sparen, wenn Sie Ihren Verbrauch verschieben.
+    </p>
+    <div class="hero__actions" appReveal [revealDelay]="400">
+      <a routerLink="/rechner" target="_blank" rel="noopener" class="btn btn--primary">PV &amp; Batterie berechnen</a>
+      <a routerLink="/analyse" class="btn btn--secondary">Preise analysieren</a>
+    </div>
+
+    <div class="live" appReveal="scale" [revealDelay]="550">
+      @if (today(); as t) {
+        <div class="live__head">
+          <div>
+            <span class="live__label"><span class="live__pulse" aria-hidden="true"></span>EKZ Dynamisch · jetzt</span>
+            <span class="live__value">{{ fmt(t.now, 1) }}<span class="live__unit">Rp./kWh</span></span>
+          </div>
+          <div class="live__compare">
+            <span>Standard-Tarif</span>
+            <strong>{{ fmt(t.nowStandard, 1) }} Rp./kWh</strong>
+          </div>
+        </div>
+        <app-line-chart
+          [series]="t.series"
+          [x]="t.x"
+          [bands]="t.bands"
+          [height]="220"
+          [xFormat]="xFormat"
+          [tooltipTitle]="tooltipTitle"
+          unit="Rp./kWh"
+          [digits]="1"
+          ariaLabel="Dynamischer und Standard-Tarif der EKZ für heute und morgen"
+        />
+        @if (t.window; as w) {
+          <p class="live__hint">
+            Günstigstes 3-Stunden-Fenster: <strong>{{ formatDayTime(w.from) }} – {{ formatTime(w.to) }}</strong>
+            mit Ø {{ fmt(w.avg, 1) }} Rp./kWh
+          </p>
+        }
+      } @else if (data.ekz.isLoading()) {
+        <p class="state">Tarifdaten werden geladen …</p>
+      } @else {
+        <p class="state">Für heute liegen noch keine Tarifdaten vor.</p>
+      }
+    </div>
+  </div>
+  <div class="hero__glow" aria-hidden="true"></div>
+</section>
+
+<!-- ================= HEUTE ================= -->
+@if (today(); as t) {
+  <section class="section section--gray section--tight" aria-labelledby="heute-title">
+    <div class="container">
+      <header class="section-header" appReveal>
+        <span class="eyebrow">Heute bei EKZ</span>
+        <h2 id="heute-title" class="headline">Ein Tag, viele Preise.</h2>
+      </header>
+      <div class="stats">
+        <div class="stat" appReveal>
+          <span class="stat__label">Tagesdurchschnitt</span>
+          <span class="stat__value">{{ fmt(t.avg, 1) }}<span class="stat__unit">Rp.</span></span>
+          <span class="stat__note">pro kWh inkl. Netz &amp; Abgaben</span>
+        </div>
+        <div class="stat" appReveal [revealDelay]="100">
+          <span class="stat__label">Tiefstwert</span>
+          <span class="stat__value">{{ fmt(t.min.v, 1) }}<span class="stat__unit">Rp.</span></span>
+          <span class="stat__note">um {{ formatTime(t.min.t) }} Uhr</span>
+        </div>
+        <div class="stat" appReveal [revealDelay]="200">
+          <span class="stat__label">Höchstwert</span>
+          <span class="stat__value">{{ fmt(t.max.v, 1) }}<span class="stat__unit">Rp.</span></span>
+          <span class="stat__note">um {{ formatTime(t.max.t) }} Uhr</span>
+        </div>
+        <div class="stat" appReveal [revealDelay]="300">
+          <span class="stat__label">Spanne</span>
+          <span class="stat__value">{{ fmt(t.max.v - t.min.v, 1) }}<span class="stat__unit">Rp.</span></span>
+          <span class="stat__note">so viel bringt das Verschieben pro kWh</span>
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+<!-- ================= TREIBER ================= -->
+<section class="section" aria-labelledby="treiber-title">
+  <div class="container">
+    <header class="section-header section-header--center" appReveal>
+      <span class="eyebrow">Warum Preise schwanken</span>
+      <h2 id="treiber-title" class="headline">Angebot trifft Nachfrage.<br />Jede Viertelstunde neu.</h2>
+      <p class="lead">
+        Der dynamische Tarif folgt dem Grosshandelspreis an der Strombörse. Dieser entsteht aus vier
+        grossen Kräften.
+      </p>
+    </header>
+
+    <div class="drivers">
+      @for (d of drivers; track d.title; let i = $index) {
+        <article class="card driver" appReveal [revealDelay]="i * 100">
+          <span class="driver__icon" aria-hidden="true">{{ d.icon }}</span>
+          <h3>{{ d.title }}</h3>
+          <p>{{ d.text }}</p>
+        </article>
+      }
+    </div>
+
+    <div class="drivers__more" appReveal>
+      <a routerLink="/analyse" class="link-arrow">Zur Datenanalyse</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EUROPA ================= -->
+<section class="section section--dark" aria-labelledby="europa-title">
+  <div class="container">
+    <div class="europe">
+      <div class="europe__text" appReveal="slide-right">
+        <span class="eyebrow">Von der Schweiz nach Europa</span>
+        <h2 id="europa-title" class="headline">Ein Netz.<br />Viele Preise.</h2>
+        <p class="lead">
+          Der europäische Strommarkt ist gekoppelt, doch Engpässe an den Grenzen und unterschiedliche
+          Kraftwerksparks führen zu deutlich verschiedenen Preisen – Ø Day-Ahead der letzten 30 Tage.
+        </p>
+        <a routerLink="/analyse" fragment="europa" class="btn btn--ghost-dark">Europa-Vergleich ansehen</a>
+      </div>
+      <div class="europe__stats">
+        @for (z of europe(); track z.name; let i = $index) {
+          <div class="stat" appReveal="scale" [revealDelay]="i * 100">
+            <span class="stat__label">{{ z.name }}</span>
+            <span class="stat__value">{{ fmt(z.avg, 0) }}<span class="stat__unit">€/MWh</span></span>
+          </div>
+        } @empty {
+          <p class="state">Europa-Daten werden geladen …</p>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SO FUNKTIONIERT'S ================= -->
+<section class="section section--gray" aria-labelledby="steps-title">
+  <div class="container">
+    <header class="section-header section-header--center" appReveal>
+      <span class="eyebrow">So funktioniert’s</span>
+      <h2 id="steps-title" class="headline">Flexibel sein lohnt sich.</h2>
+    </header>
+    <ol class="steps">
+      @for (s of steps; track s.n; let i = $index) {
+        <li class="card step" appReveal [revealDelay]="i * 120">
+          <span class="step__n">{{ s.n }}</span>
+          <h3>{{ s.title }}</h3>
+          <p>{{ s.text }}</p>
+        </li>
+      }
+    </ol>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="section" aria-labelledby="cta-title">
+  <div class="container container--text cta" appReveal>
+    <h2 id="cta-title" class="headline">Wann laden, wann verkaufen?</h2>
+    <p class="lead">
+      Der Rechner prognostiziert die Produktion Ihrer PV-Anlage mit PVGIS und MeteoSwiss und
+      plant mit einer modellprädiktiven Regelung (MPC), wann Ihre Batterie lädt, entlädt und
+      wann Strom gekauft oder verkauft wird – auf Basis des dynamischen EKZ-Tarifs.
+    </p>
+    <div class="cta__actions">
+      <a routerLink="/rechner" target="_blank" rel="noopener" class="btn btn--primary">Rechner öffnen</a>
+      <a routerLink="/analyse" class="link-arrow">Erst die Analyse lesen</a>
+    </div>
+  </div>
+</section>
