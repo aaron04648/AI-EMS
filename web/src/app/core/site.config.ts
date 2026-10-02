@@ -8,9 +8,10 @@ export const SITE = {
     { label: 'Analyse', path: '/analyse', newTab: false },
     { label: 'Rechner', path: '/rechner', newTab: true },
   ],
-  /** Mitwirkende – neue Personen einfach hier ergänzen. */
+  /** Mitwirkende – neue Personen einfach hier ergänzen (github optional). */
   contributors: [
-    { name: 'Aaron Stupf', role: 'Entwicklung & Infrastruktur', github: 'aaron04648' },
+    { name: 'Aaron Stupf', role: 'Webseite, Infrastruktur & PV-Modell', github: 'aaron04648' },
+    { name: 'Sebastian Lischer', role: 'Datenanalyse, MPC & CI/CD', github: '' },
   ],
   sources: [
     { name: 'Energy-Charts (Fraunhofer ISE)', url: 'https://energy-charts.info', license: 'CC BY 4.0' },
