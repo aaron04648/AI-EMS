@@ -1,0 +1,31 @@
+# Argo CD überwacht k8s/overlays/prod auf main und synchronisiert automatisch.
+# Jeder Push auf main → GitHub Action baut Images → setzt neue Tags im Overlay
+# → Argo CD erkennt den Commit und rollt die neue Version aus.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-ems
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/aaron04648/AI-EMS.git
+    targetRevision: main
+    path: k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ai-ems
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
