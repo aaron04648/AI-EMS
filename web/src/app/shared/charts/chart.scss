@@ -1,0 +1,278 @@
+@use 'tokens' as *;
+
+// Chart-Chrome nach der Dataviz-Referenz: Haarlinien, ruhige Achsen,
+// Text in Text-Farben – nur die Daten tragen Farbe.
+:host {
+  --chart-grid: #e8e8ed;
+  --chart-axis: #d2d2d7;
+  --chart-muted: #86868b;
+  --chart-surface: #ffffff;
+  --chart-band: rgba(27, 175, 122, 0.12);
+
+  display: block;
+  position: relative;
+  min-width: 0;
+  margin-top: $spacing-5;
+  font-size: $text-xs;
+  color: $color-ink;
+}
+
+// ---------- Legende ----------
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-2 $spacing-5;
+  list-style: none;
+  margin-bottom: $spacing-3;
+  font-size: $text-sm;
+  color: $color-gray-500;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-2;
+  }
+}
+
+.legend__swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+// ---------- Linien-/Flächendiagramm ----------
+.plot {
+  position: relative;
+  width: 100%;
+
+  svg {
+    display: block;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    touch-action: pan-y;
+  }
+}
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.baseline {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--chart-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tick--y {
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.tick--x {
+  text-anchor: middle;
+}
+
+.band {
+  fill: var(--chart-band);
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.area {
+  opacity: 0.1;
+  stroke: none;
+}
+
+// Gestapelte Flächen: kräftiger, damit die Anteile lesbar bleiben
+.area--stacked {
+  opacity: 0.75;
+}
+
+.crosshair {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.dot {
+  stroke: var(--chart-surface);
+  stroke-width: 2;
+}
+
+// ---------- Tooltip ----------
+.tooltip {
+  position: absolute;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  padding: $spacing-3 $spacing-4;
+  border-radius: $radius-sm;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  transform: translateX(14px);
+  pointer-events: none;
+  font-size: $text-xs;
+  white-space: nowrap;
+
+  strong {
+    font-size: $text-sm;
+    margin-bottom: 2px;
+  }
+}
+
+.tooltip--left {
+  transform: translateX(calc(-100% - 14px));
+}
+
+.tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+}
+
+.tooltip__name {
+  flex: 1;
+  color: $color-gray-500;
+}
+
+.tooltip__value {
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip__note {
+  color: $color-gray-500;
+}
+
+// ---------- Horizontale Balken ----------
+.hbars {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(90px, 9rem) 1fr 5.5rem;
+  align-items: center;
+  gap: $spacing-3;
+  padding-block: 3px;
+  font-size: $text-sm;
+  border-radius: 6px;
+
+  &.is-hover {
+    background: $color-offwhite;
+  }
+}
+
+.hbar__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $color-gray-500;
+}
+
+.hbar__track {
+  position: relative;
+  height: 18px;
+}
+
+.hbar__bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  min-width: 2px;
+}
+
+.hbar__bar--neg {
+  border-radius: 4px 0 0 4px;
+}
+
+.hbar__value {
+  text-align: right;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip--inline {
+  top: 100%;
+  left: 9rem;
+  transform: translateY(4px);
+}
+
+// ---------- Vertikale Säulen ----------
+.vbars {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.vbar {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-2;
+  min-width: 0;
+  border-radius: 6px;
+
+  &:hover {
+    background: $color-offwhite;
+  }
+}
+
+.vbar__track {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  border-bottom: 1px solid var(--chart-axis);
+}
+
+.vbar__bar {
+  position: absolute;
+  left: 50%;
+  width: min(24px, 70%);
+  transform: translateX(-50%);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+}
+
+.vbar__bar--neg {
+  border-radius: 0 0 4px 4px;
+}
+
+.vbar__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--chart-muted);
+  white-space: nowrap;
+}
+
+.tooltip--bar {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  min-width: 120px;
+}
