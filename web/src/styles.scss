@@ -1,0 +1,543 @@
+// =============================================================
+// AI-EMS – Globale Styles
+// =============================================================
+@use 'tokens' as *;
+
+// ---------- Reset ----------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-padding-top: calc(#{$header-height} + #{$spacing-6});
+  -webkit-text-size-adjust: 100%;
+}
+
+// Sanftes Scrollen wird erst nach dem Laden aktiviert (siehe App-Komponente):
+// Während des Seitenaufbaus würde die laufende Scroll-Animation den Sprung zu
+// einem Anker aus der URL überschreiben – Deep-Links landeten dann am Seitenanfang.
+html.is-ready {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $text-base;
+  line-height: $line-height-base;
+  letter-spacing: $letter-spacing-base;
+  color: $color-ink;
+  background: $color-white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: $color-accent;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+ul,
+ol {
+  list-style-position: inside;
+}
+
+// ---------- Typografie ----------
+h1,
+h2,
+h3,
+h4 {
+  font-weight: $font-weight-semibold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-tight;
+  color: inherit;
+}
+
+.display {
+  font-size: $text-6xl;
+  font-weight: $font-weight-bold;
+}
+
+.headline {
+  font-size: clamp($text-3xl, 4.5vw, $text-5xl);
+  font-weight: $font-weight-bold;
+}
+
+.subheadline {
+  font-size: clamp($text-2xl, 3vw, $text-3xl);
+}
+
+.lead {
+  font-size: clamp($text-lg, 2vw, $text-xl);
+  line-height: $line-height-base;
+  color: $color-gray-500;
+  font-weight: $font-weight-regular;
+}
+
+.eyebrow {
+  display: block;
+  font-size: $text-sm;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $color-accent;
+  margin-bottom: $spacing-4;
+}
+
+.text-secondary {
+  color: $color-gray-500;
+}
+
+// ---------- Layout ----------
+.container {
+  width: 100%;
+  max-width: $container-max;
+  margin-inline: auto;
+  padding-inline: $spacing-5;
+
+  @media (min-width: $bp-md) {
+    padding-inline: $spacing-6;
+  }
+}
+
+.container--text {
+  max-width: $container-text;
+}
+
+.section {
+  padding-block: $spacing-10;
+
+  @media (min-width: $bp-md) {
+    padding-block: $spacing-12;
+  }
+}
+
+.section--tight {
+  padding-block: $spacing-9;
+}
+
+.section--gray {
+  background: $color-offwhite;
+}
+
+.section--dark {
+  background: $color-black;
+  color: $color-white;
+
+  .lead,
+  .text-secondary {
+    color: $color-gray-400;
+  }
+
+  .eyebrow {
+    color: $color-accent-dark;
+  }
+}
+
+.section-header {
+  max-width: $container-text;
+  margin-bottom: $spacing-8;
+
+  @media (min-width: $bp-md) {
+    margin-bottom: $spacing-9;
+  }
+
+  p {
+    margin-top: $spacing-4;
+  }
+}
+
+.section-header--center {
+  margin-inline: auto;
+  text-align: center;
+}
+
+// ---------- Buttons (Apple-Pill-Style) ----------
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  padding: $spacing-3 $spacing-5;
+  border-radius: $radius-full;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: $text-base;
+  font-weight: $font-weight-medium;
+  letter-spacing: $letter-spacing-base;
+  cursor: pointer;
+  transition: background-color $transition-base, color $transition-base,
+    border-color $transition-base, transform $transition-base;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+}
+
+.btn--primary {
+  background: $color-accent;
+  color: $color-white;
+
+  &:hover {
+    background: $color-accent-hover;
+  }
+}
+
+.btn--secondary {
+  background: transparent;
+  color: $color-accent;
+  border-color: $color-accent;
+
+  &:hover {
+    background: $color-accent;
+    color: $color-white;
+  }
+}
+
+.btn--ghost-dark {
+  background: $color-white;
+  color: $color-black;
+
+  &:hover {
+    background: $color-offwhite;
+  }
+}
+
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  font-weight: $font-weight-medium;
+  color: $color-accent;
+
+  &::after {
+    content: '›';
+    font-size: 1.2em;
+    line-height: 1;
+    transition: transform $transition-base;
+  }
+
+  &:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+// ---------- Scroll-Reveal-Animationen ----------
+// Wird durch die RevealDirective (IntersectionObserver) gesteuert.
+.reveal {
+  opacity: 0;
+  will-change: opacity, transform;
+  transition: opacity $transition-reveal, transform $transition-reveal;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal--slide-up {
+  transform: translateY(36px);
+}
+
+.reveal--slide-left {
+  transform: translateX(48px);
+}
+
+.reveal--slide-right {
+  transform: translateX(-48px);
+}
+
+.reveal--scale {
+  transform: scale(0.94);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.is-ready {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+// ---------- Karten ----------
+.card {
+  background: $color-white;
+  border-radius: $radius-md;
+  padding: $spacing-6;
+  box-shadow: $shadow-card;
+  transition: transform 0.4s $ease-out-expo, box-shadow 0.4s $ease-out-expo;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-hover;
+  }
+}
+
+// =============================================================
+// AI-EMS – Ergänzungen: Kennzahlen, Formulare, Charts
+// =============================================================
+
+// ---------- Kennzahlen (Stat-Tiles) ----------
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-5;
+}
+
+.stat {
+  padding: $spacing-6;
+  border-radius: $radius-md;
+  background: $color-white;
+  box-shadow: $shadow-card;
+
+  .section--gray & {
+    background: $color-white;
+  }
+
+  .section--dark & {
+    background: #161617;
+    box-shadow: none;
+  }
+}
+
+.stat__label {
+  display: block;
+  font-size: $text-sm;
+  color: $color-gray-500;
+
+  .section--dark & {
+    color: $color-gray-400;
+  }
+}
+
+.stat__value {
+  display: block;
+  margin-top: $spacing-2;
+  font-size: clamp($text-3xl, 4vw, $text-4xl);
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-tight;
+}
+
+.stat__unit {
+  font-size: $text-lg;
+  font-weight: $font-weight-medium;
+  color: $color-gray-500;
+  margin-left: $spacing-1;
+}
+
+.stat__note {
+  display: block;
+  margin-top: $spacing-2;
+  font-size: $text-xs;
+  color: $color-gray-400;
+}
+
+// ---------- Chart-Karten ----------
+.chart-card {
+  min-width: 0;
+  padding: $spacing-6 $spacing-5;
+  border-radius: $radius-lg;
+  background: $color-white;
+  box-shadow: $shadow-card;
+
+  @media (min-width: $bp-md) {
+    padding: $spacing-7;
+  }
+
+  h3 {
+    font-size: $text-xl;
+  }
+
+  > p {
+    margin-top: $spacing-2;
+    color: $color-gray-500;
+    font-size: $text-sm;
+    line-height: $line-height-loose;
+  }
+}
+
+.chart-card + .chart-card,
+.chart-grid + .chart-card,
+.chart-card + .chart-grid {
+  margin-top: $spacing-6;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $spacing-6;
+
+  @media (min-width: $bp-lg) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.source-note {
+  margin-top: $spacing-4;
+  font-size: $text-xs;
+  color: $color-gray-400;
+}
+
+// ---------- Formulare (Rechner) ----------
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+
+  label,
+  .field__label {
+    display: flex;
+    justify-content: space-between;
+    gap: $spacing-3;
+    font-size: $text-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  output {
+    font-variant-numeric: tabular-nums;
+    color: $color-accent;
+    font-weight: $font-weight-semibold;
+  }
+
+  small {
+    font-size: $text-xs;
+    color: $color-gray-400;
+  }
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: $color-accent;
+}
+
+input[type='number'],
+select {
+  width: 100%;
+  padding: $spacing-3 $spacing-4;
+  border-radius: $radius-sm;
+  border: 1px solid $color-gray-200;
+  background: $color-white;
+  font: inherit;
+  color: inherit;
+
+  &:focus {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: $spacing-1;
+  padding: $spacing-1;
+  border-radius: $radius-full;
+  background: $color-gray-100;
+
+  button {
+    padding: $spacing-2 $spacing-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    font: inherit;
+    font-size: $text-sm;
+    color: $color-ink;
+    cursor: pointer;
+    transition: background-color $transition-base, box-shadow $transition-base;
+
+    &.is-active {
+      background: $color-white;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  font-size: $text-sm;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: $color-accent;
+  }
+}
+
+// ---------- Lade- & Fehlerzustand ----------
+.state {
+  padding: $spacing-8 $spacing-5;
+  text-align: center;
+  color: $color-gray-500;
+  font-size: $text-sm;
+}
+
+.state--error {
+  color: #b42318;
+}
+
+// ---------- Fliesstext-Listen ----------
+.prose {
+  p + p {
+    margin-top: $spacing-4;
+  }
+
+  ul,
+  &:is(ul) {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+    margin-top: $spacing-4;
+  }
+
+  li {
+    position: relative;
+    padding-left: $spacing-5;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.6em;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $color-accent;
+    }
+  }
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
