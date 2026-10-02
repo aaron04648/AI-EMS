@@ -4,8 +4,7 @@
 
 ## Project Details
 
-> ⚠️ **Deliverable - 24.09.2026:** Add the names of all team members and their non-binding tasks. Invite all coaches to your repositories.
-
+> 
 ### Team Members
 
 | Name | Major task |
