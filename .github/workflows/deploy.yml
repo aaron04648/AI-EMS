@@ -1,0 +1,182 @@
+# =============================================================
+# Push auf main →
+#   1. Daten-Snapshot holen (energy-charts.info + EKZ)
+#   2. Images bauen & nach ghcr.io pushen
+#   3. Image-Tags in k8s/overlays/prod setzen → Argo CD rollt aus
+#   4. Webseite auf GitHub Pages veröffentlichen
+# Zusätzlich alle 6 h: frische Daten für GitHub Pages.
+# =============================================================
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'k8s/overlays/prod/kustomization.yaml'
+      - '**.md'
+  schedule:
+    - cron: '20 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/ai-ems-web
+  FETCHER_IMAGE: ghcr.io/${{ github.repository_owner }}/ai-ems-fetcher
+  API_IMAGE: ghcr.io/${{ github.repository_owner }}/ai-ems-api
+
+jobs:
+  data:
+    name: Daten-Snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Daten holen
+        env:
+          OUT_DIR: ${{ github.workspace }}/data
+        # Teilerfolge sind ok – fehlende Dateien werden beim nächsten Lauf nachgeholt
+        run: node fetcher/fetch-data.mjs || echo "::warning::Nicht alle Datensätze konnten geladen werden"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: data
+          retention-days: 3
+
+  test-api:
+    name: Backend-Tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+      - working-directory: api
+        run: |
+          pip install -r requirements.txt pytest
+          python -m pytest -q tests
+
+  images:
+    name: Images bauen & pushen
+    if: github.event_name != 'schedule'
+    needs: [data, test-api]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: data
+          path: web/public/data
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Web-Image
+        uses: docker/build-push-action@v6
+        with:
+          context: web
+          push: true
+          tags: |
+            ${{ env.WEB_IMAGE }}:${{ github.sha }}
+            ${{ env.WEB_IMAGE }}:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+      - name: Fetcher-Image
+        uses: docker/build-push-action@v6
+        with:
+          context: fetcher
+          push: true
+          tags: |
+            ${{ env.FETCHER_IMAGE }}:${{ github.sha }}
+            ${{ env.FETCHER_IMAGE }}:latest
+          cache-from: type=gha,scope=fetcher
+          cache-to: type=gha,mode=max,scope=fetcher
+      - name: API-Image
+        uses: docker/build-push-action@v6
+        with:
+          context: api
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+            ${{ env.API_IMAGE }}:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+  gitops:
+    name: Produktiv-Overlay aktualisieren
+    needs: images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Image-Tags setzen
+        env:
+          TAG: ${{ github.sha }}
+          FILE: k8s/overlays/prod/kustomization.yaml
+        run: |
+          yq -i '(.images[] | select(.name == strenv(WEB_IMAGE))).newTag = strenv(TAG)' "$FILE"
+          yq -i '(.images[] | select(.name == strenv(FETCHER_IMAGE))).newTag = strenv(TAG)' "$FILE"
+          yq -i '(.images[] | select(.name == strenv(API_IMAGE))).newTag = strenv(TAG)' "$FILE"
+          git diff --stat
+      - name: Commit & Push (Argo CD synchronisiert danach automatisch)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/prod/kustomization.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "deploy: ai-ems ${GITHUB_SHA::7} [skip ci]"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 5; done
+          exit 1
+
+  pages:
+    name: GitHub Pages
+    needs: data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: data
+          path: web/public/data
+      - name: Build
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npx ng build --configuration production --base-href "/${{ github.event.repository.name }}/"
+          # SPA-Deep-Links (/rechner, /analyse) auf GitHub Pages
+          cp dist/web/browser/index.html dist/web/browser/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist/web/browser
+      - id: deployment
+        uses: actions/deploy-pages@v4
