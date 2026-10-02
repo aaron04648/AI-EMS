@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DataService } from '../../core/data.service';
 import { formatFull } from '../../core/series';
@@ -7,7 +8,7 @@ import { Logo } from '../logo';
 
 @Component({
   selector: 'app-footer',
-  imports: [RouterLink, Logo],
+  imports: [RouterLink, NgTemplateOutlet, Logo],
   templateUrl: './footer.html',
   styleUrl: './footer.scss',
 })

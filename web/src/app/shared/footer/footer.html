@@ -23,17 +23,27 @@
         <ul class="contributors">
           @for (person of site.contributors; track person.name) {
             <li>
-              <a [href]="'https://github.com/' + person.github" target="_blank" rel="noopener noreferrer">
-                <span class="contributors__avatar" aria-hidden="true">{{ initials(person.name) }}</span>
-                <span>
-                  <strong>{{ person.name }}</strong>
-                  <small>{{ person.role }}</small>
+              @if (person.github) {
+                <a [href]="'https://github.com/' + person.github" target="_blank" rel="noopener noreferrer">
+                  <ng-container *ngTemplateOutlet="card; context: { $implicit: person }" />
+                </a>
+              } @else {
+                <span class="contributors__item">
+                  <ng-container *ngTemplateOutlet="card; context: { $implicit: person }" />
                 </span>
-              </a>
+              }
             </li>
           }
         </ul>
       </section>
+
+      <ng-template #card let-person>
+        <span class="contributors__avatar" aria-hidden="true">{{ initials(person.name) }}</span>
+        <span>
+          <strong>{{ person.name }}</strong>
+          <small>{{ person.role }}</small>
+        </span>
+      </ng-template>
 
       <nav class="footer__col" aria-label="Seiten">
         <h3>Seiten</h3>

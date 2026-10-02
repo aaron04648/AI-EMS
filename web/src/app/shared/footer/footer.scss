@@ -131,7 +131,8 @@
   flex-direction: column;
   gap: $spacing-3;
 
-  a {
+  a,
+  .contributors__item {
     display: flex;
     align-items: center;
     gap: $spacing-3;
