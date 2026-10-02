@@ -9,6 +9,14 @@ services:
       - data:/srv/data:ro
     depends_on:
       - fetcher
+      - api
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    image: ai-ems-api:local
+    environment:
+      SNAPSHOT_URL: http://web:8080/data
     restart: unless-stopped
 
   fetcher:
