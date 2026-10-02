@@ -1,0 +1,25 @@
+# Lokale Docker-Umgebung:  docker compose up --build  →  http://localhost:8080 (Port via WEB_PORT änderbar)
+services:
+  web:
+    build: ./web
+    image: ai-ems-web:local
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    volumes:
+      - data:/srv/data:ro
+    depends_on:
+      - fetcher
+    restart: unless-stopped
+
+  fetcher:
+    build: ./fetcher
+    image: ai-ems-fetcher:local
+    environment:
+      OUT_DIR: /srv/data
+      INTERVAL_MINUTES: "180"
+    volumes:
+      - data:/srv/data
+    restart: unless-stopped
+
+volumes:
+  data:
