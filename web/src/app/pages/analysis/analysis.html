@@ -1,0 +1,344 @@
+<!-- ================= INTRO ================= -->
+<section class="intro">
+  <div class="container container--text">
+    <span class="eyebrow" appReveal="fade">Analyse</span>
+    <h1 class="display" appReveal [revealDelay]="100">Warum Strom&shy;preise steigen und sinken.</h1>
+    <p class="lead" appReveal [revealDelay]="200">
+      Eine datenbasierte Analyse der Day-Ahead-Preise von
+      <a href="https://energy-charts.info" target="_blank" rel="noopener noreferrer">Energy-Charts</a>
+      – zuerst für die Schweiz, dann im europäischen Vergleich – und was das für den dynamischen
+      Tarif der EKZ bedeutet.
+    </p>
+    <nav class="jump" aria-label="Abschnitte" appReveal [revealDelay]="300">
+      <a routerLink="/analyse" fragment="schweiz">Schweiz</a>
+      <a routerLink="/analyse" fragment="treiber">Preistreiber</a>
+      <a routerLink="/analyse" fragment="europa">Europa</a>
+      <a routerLink="/analyse" fragment="ekz">EKZ</a>
+      <a routerLink="/analyse" fragment="fazit">Fazit</a>
+    </nav>
+  </div>
+</section>
+
+<!-- ================= SCHWEIZ ================= -->
+<section id="schweiz" class="section section--gray" aria-labelledby="schweiz-title">
+  <div class="container">
+    <header class="section-header" appReveal>
+      <span class="eyebrow">Schweiz · Gebotszone CH</span>
+      <h2 id="schweiz-title" class="headline">Ein Jahr Schweizer Strompreis.</h2>
+      <p class="lead">
+        Der Day-Ahead-Preis wird täglich um 12 Uhr an der Börse für jede Stunde des Folgetags
+        festgelegt. Er ist die Basis für den dynamischen Energiepreis der EKZ.
+      </p>
+    </header>
+
+    @if (chKpis(); as k) {
+      <div class="stats" appReveal>
+        <div class="stat">
+          <span class="stat__label">Ø letzte 12 Monate</span>
+          <span class="stat__value">{{ fmt(k.avgYear) }}<span class="stat__unit">€/MWh</span></span>
+          <span class="stat__note">≈ {{ fmt(k.avgYear / 10 * 0.94, 1) }} Rp./kWh reine Energie</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Ø letzte 30 Tage</span>
+          <span class="stat__value">{{ fmt(k.avgMonth) }}<span class="stat__unit">€/MWh</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Stunden mit negativem Preis</span>
+          <span class="stat__value">{{ fmt(k.negative) }}<span class="stat__unit">h</span></span>
+          <span class="stat__note">in den letzten 12 Monaten</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Ø Tagesspanne (30 Tage)</span>
+          <span class="stat__value">{{ fmt(k.spread) }}<span class="stat__unit">€/MWh</span></span>
+          <span class="stat__note">teuerste minus günstigste Stunde</span>
+        </div>
+      </div>
+    } @else {
+      <p class="state">Daten werden geladen …</p>
+    }
+
+    <div class="chart-grid chart-grid--spaced">
+      @if (monthly().length) {
+        <article class="chart-card" appReveal>
+          <h3>Monatsmittel</h3>
+          <p>
+            Ø Day-Ahead-Preis je Monat in €/MWh.
+            @if (monthlyExtremes(); as e) {
+              Am günstigsten war {{ e.low.label }} ({{ fmt(e.low.value) }} €/MWh), am teuersten
+              {{ e.high.label }} ({{ fmt(e.high.value) }} €/MWh) – hervorgehoben.
+            }
+          </p>
+          <app-bar-chart [rows]="monthly()" orientation="vertical" unit="€/MWh" [height]="260" ariaLabel="Monatsmittel Day-Ahead Schweiz" />
+        </article>
+      }
+
+      @if (seasonProfile(); as s) {
+        <article class="chart-card" appReveal [revealDelay]="100">
+          <h3>Der typische Tag</h3>
+          <p>
+            Ø Preis je Stunde. Im Sommer drückt die Sonne den Mittag auf
+            {{ fmt(s.summerNoon) }} €/MWh, um 20 Uhr sind es {{ fmt(s.summerEvening) }} €/MWh. Im Winter
+            fehlt das Mittagstal – dafür sind Morgen und Abend teuer.
+          </p>
+          <app-line-chart
+            [series]="s.series"
+            [x]="hours"
+            [xFormat]="hourLabel"
+            [xTickCount]="7"
+            unit="€/MWh"
+            ariaLabel="Durchschnittlicher Tagesverlauf Sommer und Winter"
+          />
+        </article>
+      }
+    </div>
+
+    @if (chMix(); as m) {
+      <article class="chart-card mix" appReveal>
+        <h3>Was die Schweiz produziert – und was der Strom kostet</h3>
+        <p>
+          Stündliche Erzeugung der letzten 14 Tage in MW, darunter der Preis und der Austausch mit dem
+          Ausland auf derselben Zeitachse. Achten Sie auf die Mittagsspitzen von Solar und die Abende,
+          an denen Speicherkraftwerke und Importe einspringen.
+        </p>
+        <app-line-chart
+          [series]="m.series"
+          [x]="m.x"
+          [stacked]="true"
+          [height]="300"
+          [xFormat]="formatDay"
+          [tooltipTitle]="formatDayTime"
+          unit="MW"
+          ariaLabel="Gestapelte Stromerzeugung der Schweiz nach Quelle"
+        />
+        <div class="mix__sub">
+          <h4>Day-Ahead-Preis (€/MWh)</h4>
+          <app-line-chart
+            [series]="m.price"
+            [x]="m.x"
+            [height]="170"
+            [xFormat]="formatDay"
+            [tooltipTitle]="formatDayTime"
+            unit="€/MWh"
+            ariaLabel="Day-Ahead-Preis Schweiz"
+          />
+        </div>
+        <div class="mix__sub">
+          <h4>Netto-Import (+) / Export (–) in MW</h4>
+          <app-line-chart
+            [series]="m.imports"
+            [x]="m.x"
+            [height]="170"
+            [area]="true"
+            [xFormat]="formatDay"
+            [tooltipTitle]="formatDayTime"
+            unit="MW"
+            ariaLabel="Grenzüberschreitender Stromhandel der Schweiz"
+          />
+        </div>
+
+        <table class="mix__table">
+          <caption class="visually-hidden">Ø Erzeugung nach Quelle, letzte 14 Tage</caption>
+          <thead>
+            <tr>
+              <th scope="col">Quelle</th>
+              <th scope="col">Ø Leistung</th>
+              <th scope="col">Anteil</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of m.table; track row.name) {
+              <tr>
+                <th scope="row"><span class="swatch" [style.background]="row.color"></span>{{ row.name }}</th>
+                <td>{{ fmt(row.mw) }} MW</td>
+                <td>{{ fmt(row.share, 1) }} %</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="source-note">Quelle: Energy-Charts / Fraunhofer ISE, CC BY 4.0. Stündliche Mittelwerte.</p>
+      </article>
+    }
+  </div>
+</section>
+
+<!-- ================= TREIBER ================= -->
+<section id="treiber" class="section" aria-labelledby="treiber-title">
+  <div class="container">
+    <header class="section-header" appReveal>
+      <span class="eyebrow">Preistreiber</span>
+      <h2 id="treiber-title" class="headline">Was den Preis bewegt.</h2>
+      <p class="lead">
+        Wie eng hängt der Schweizer Preis mit Verbrauch, Solarstrom und Importen zusammen? Die
+        Korrelation reicht von –1 (gegenläufig) bis +1 (gleichläufig), berechnet aus den
+        Stundenwerten der letzten 30 Tage.
+      </p>
+    </header>
+
+    @if (drivers(); as d) {
+      <div class="chart-grid">
+        <article class="chart-card" appReveal>
+          <h3>Korrelation mit dem Preis</h3>
+          <p>Positiv: Steigt die Grösse, steigt auch der Preis. Negativ: Er sinkt.</p>
+          <app-bar-chart [rows]="d.rows" [digits]="2" ariaLabel="Korrelation von Preistreibern mit dem Strompreis" />
+        </article>
+        <article class="chart-card insight" appReveal [revealDelay]="100">
+          <h3>Sonne macht Strom billig</h3>
+          <p>Ø Preis zwischen 10 und 16 Uhr, aufgeteilt nach Solar-Einspeisung.</p>
+          <div class="insight__pair">
+            <div>
+              <span class="insight__label">Sonnenreichste 25 % der Stunden</span>
+              <span class="insight__value">{{ fmt(d.sunny) }}<small>€/MWh</small></span>
+            </div>
+            <div>
+              <span class="insight__label">Sonnenärmste 25 % der Stunden</span>
+              <span class="insight__value">{{ fmt(d.cloudy) }}<small>€/MWh</small></span>
+            </div>
+          </div>
+          <p>
+            Die Residuallast – also der Verbrauch, den Wind und Sonne nicht decken – muss von
+            steuerbaren Kraftwerken oder Importen gedeckt werden. Je höher sie ist, desto teurere
+            Anlagen setzen den Preis (Merit-Order).
+          </p>
+        </article>
+      </div>
+    }
+
+    @if (weekdays().length) {
+      <article class="chart-card" appReveal>
+        <h3>Wochenende ist günstiger</h3>
+        <p>Ø Preis je Wochentag (letzte 12 Monate). Industrie und Gewerbe brauchen am Wochenende weniger Strom.</p>
+        <app-bar-chart [rows]="weekdays()" orientation="vertical" unit="€/MWh" [height]="200" ariaLabel="Durchschnittspreis nach Wochentag" />
+      </article>
+    }
+  </div>
+</section>
+
+<!-- ================= EUROPA ================= -->
+<section id="europa" class="section section--gray" aria-labelledby="europa-title">
+  <div class="container">
+    <header class="section-header" appReveal>
+      <span class="eyebrow">Europa</span>
+      <h2 id="europa-title" class="headline">Gekoppelt, aber nicht gleich.</h2>
+      <p class="lead">
+        Europas Strommärkte sind über Grenzkuppelstellen verbunden. Solange die Leitungen nicht
+        ausgelastet sind, gleichen sich die Preise an. Wo Engpässe bestehen, entscheidet der
+        lokale Kraftwerkspark: Wasserkraft im Norden, Kernkraft in Frankreich, Kohle und Gas im Osten.
+      </p>
+    </header>
+
+    <div class="chart-grid">
+      @if (euAverage().length) {
+        <article class="chart-card" appReveal>
+          <h3>Ø Day-Ahead-Preis, 30 Tage</h3>
+          <p>In €/MWh je Gebotszone. Die Schweiz ist hervorgehoben.</p>
+          <app-bar-chart [rows]="euAverage()" unit="€" ariaLabel="Durchschnittspreis je Gebotszone" />
+        </article>
+      }
+      @if (euSpread().length) {
+        <article class="chart-card" appReveal [revealDelay]="100">
+          <h3>Ø Tagesspanne, 30 Tage</h3>
+          <p>Differenz zwischen teuerster und günstigster Stunde. Je grösser, desto mehr bringt ein dynamischer Tarif.</p>
+          <app-bar-chart [rows]="euSpread()" unit="€" ariaLabel="Durchschnittliche Tagesspanne je Gebotszone" />
+        </article>
+      }
+    </div>
+
+    @if (euTrend(); as t) {
+      <article class="chart-card" appReveal>
+        <h3>Tagesmittel im Vergleich</h3>
+        <p>Die Schweiz liegt meist zwischen Deutschland und Italien – sie importiert und exportiert in beide Richtungen.</p>
+        <app-line-chart
+          [series]="t.series"
+          [x]="t.x"
+          [xFormat]="formatDay"
+          unit="€/MWh"
+          ariaLabel="Tagesmittel Schweiz, Deutschland, Frankreich, Italien Nord"
+        />
+      </article>
+    }
+
+    @if (renewables(); as r) {
+      <div class="chart-grid">
+        <article class="chart-card" appReveal>
+          <h3>Ø Anteil Wind &amp; Solar an der Last</h3>
+          <p>Letzte 30 Tage, in Prozent. Die Schweiz deckt ihre Last vor allem mit Wasser- und Kernkraft.</p>
+          <app-bar-chart [rows]="r.share" unit="%" ariaLabel="Anteil Wind und Solar an der Last je Land" />
+        </article>
+        <article class="chart-card" appReveal [revealDelay]="100">
+          <h3>Mehr Wind &amp; Sonne = tieferer Preis?</h3>
+          <p>Korrelation zwischen täglichem Wind+Solar-Anteil und Tagespreis. Stark negativ heisst: Viel Erneuerbare drücken den Preis.</p>
+          <app-bar-chart [rows]="r.corr" [digits]="2" ariaLabel="Korrelation Erneuerbaren-Anteil und Preis je Land" />
+        </article>
+      </div>
+    }
+    <p class="source-note">Quelle: Energy-Charts / Fraunhofer ISE (ENTSO-E, EPEX Spot), CC BY 4.0.</p>
+  </div>
+</section>
+
+<!-- ================= EKZ ================= -->
+<section id="ekz" class="section" aria-labelledby="ekz-title">
+  <div class="container">
+    <header class="section-header" appReveal>
+      <span class="eyebrow">EKZ Energie Dynamisch</span>
+      <h2 id="ekz-title" class="headline">Vom Börsenpreis zum Tarif.</h2>
+      <p class="lead">
+        Der dynamische Energiepreis der EKZ folgt dem Schweizer Day-Ahead-Preis. Dazu kommen
+        Netznutzung, Systemdienstleistungen und Abgaben, die beim Tarif 400D ebenfalls zeitabhängig sind.
+      </p>
+    </header>
+
+    @if (ekzVsSpot(); as e) {
+      <article class="chart-card" appReveal>
+        <h3>Letzte 7 Tage: EKZ-Energiepreis und Börsenpreis</h3>
+        <p>
+          Beide in Rp./kWh (Börsenpreis umgerechnet mit 1 € = 0.94 CHF). Korrelation:
+          <strong>{{ fmt(e.corr, 2) }}</strong>. Ø EKZ-Energiepreis {{ fmt(e.avgEkz, 1) }} Rp./kWh, Ø Börse
+          {{ fmt(e.avgSpot, 1) }} Rp./kWh.
+        </p>
+        <app-line-chart
+          [series]="e.series"
+          [x]="e.x"
+          [xFormat]="formatDay"
+          [tooltipTitle]="formatDayTime"
+          unit="Rp./kWh"
+          [digits]="1"
+          ariaLabel="EKZ Energie Dynamisch und Schweizer Day-Ahead-Preis"
+        />
+        <p class="source-note">Quellen: EKZ Tarif-API (electricity_dynamic), Energy-Charts.</p>
+      </article>
+    }
+  </div>
+</section>
+
+<!-- ================= FAZIT ================= -->
+<section id="fazit" class="section section--dark" aria-labelledby="fazit-title">
+  <div class="container">
+    <header class="section-header section-header--center" appReveal>
+      <span class="eyebrow">Fazit</span>
+      <h2 id="fazit-title" class="headline">Wann Strom günstig ist.</h2>
+    </header>
+    <div class="verdict">
+      <div class="verdict__col" appReveal="slide-right">
+        <h3><span class="verdict__icon verdict__icon--down" aria-hidden="true">↓</span>Preise sinken, wenn …</h3>
+        <ul class="prose">
+          <li>die Sonne scheint – vor allem zwischen 11 und 15 Uhr im Sommerhalbjahr,</li>
+          <li>in Norddeutschland viel Wind weht und günstiger Strom in die Schweiz fliesst,</li>
+          <li>Wochenende oder Feiertag ist und Industrie und Gewerbe weniger brauchen,</li>
+          <li>Schnee schmilzt und die Laufwasserkraftwerke viel Wasser haben (Mai–Juli).</li>
+        </ul>
+      </div>
+      <div class="verdict__col" appReveal="slide-left">
+        <h3><span class="verdict__icon verdict__icon--up" aria-hidden="true">↑</span>Preise steigen, wenn …</h3>
+        <ul class="prose">
+          <li>abends die Nachfrage hoch ist und die Sonne schon untergegangen ist,</li>
+          <li>es im Winter kalt, windstill und neblig ist („Dunkelflaute“),</li>
+          <li>Gaskraftwerke den Preis setzen und der Gaspreis hoch ist,</li>
+          <li>französische Kernkraftwerke in Revision sind oder Grenzleitungen ausgelastet sind.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="verdict__cta" appReveal>
+      <a routerLink="/rechner" target="_blank" rel="noopener" class="btn btn--ghost-dark">PV &amp; Batterie optimieren – Rechner öffnen</a>
+    </div>
+  </div>
+</section>
