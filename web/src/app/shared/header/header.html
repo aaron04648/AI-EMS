@@ -1,0 +1,32 @@
+<header class="header" [class.header--scrolled]="scrolled()" [class.header--open]="menuOpen()">
+  <div class="header__inner container">
+    <a routerLink="/" class="header__logo" aria-label="AI-EMS – Startseite" (click)="closeMenu()">
+      <app-logo />
+    </a>
+
+    <nav class="header__nav" aria-label="Hauptnavigation">
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+          [target]="item.newTab ? '_blank' : '_self'"
+          [attr.rel]="item.newTab ? 'noopener' : null"
+          (click)="closeMenu()"
+        >{{ item.label }}</a>
+      }
+      <a routerLink="/rechner" target="_blank" rel="noopener" class="header__cta" (click)="closeMenu()">Rechner öffnen</a>
+    </nav>
+
+    <button
+      type="button"
+      class="header__burger"
+      [attr.aria-expanded]="menuOpen()"
+      aria-label="Menü öffnen oder schliessen"
+      (click)="toggleMenu()"
+    >
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</header>
