@@ -1,0 +1,191 @@
+@use 'tokens' as *;
+
+.intro {
+  padding-block: calc(#{$header-height} + #{$spacing-10}) $spacing-9;
+  text-align: center;
+
+  .lead {
+    margin-top: $spacing-5;
+  }
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: $spacing-2;
+  margin-top: $spacing-7;
+
+  a {
+    padding: $spacing-2 $spacing-4;
+    border-radius: $radius-full;
+    background: $color-offwhite;
+    color: $color-ink;
+    font-size: $text-sm;
+    transition: background-color $transition-base;
+
+    &:hover {
+      background: $color-gray-100;
+      text-decoration: none;
+    }
+  }
+}
+
+.chart-grid--spaced {
+  margin-top: $spacing-6;
+}
+
+.chart-grid,
+.chart-card {
+  margin-bottom: $spacing-6;
+}
+
+// ---------- Erzeugungsmix ----------
+.mix__sub {
+  margin-top: $spacing-6;
+  padding-top: $spacing-5;
+  border-top: 1px solid $color-gray-100;
+
+  h4 {
+    font-size: $text-sm;
+    font-weight: $font-weight-medium;
+    color: $color-gray-500;
+  }
+
+  ::ng-deep .chart {
+    margin-top: $spacing-3;
+  }
+}
+
+.mix__table {
+  width: 100%;
+  margin-top: $spacing-6;
+  border-collapse: collapse;
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums;
+
+  th,
+  td {
+    padding: $spacing-2 $spacing-3;
+    border-bottom: 1px solid $color-gray-100;
+    text-align: right;
+  }
+
+  th:first-child {
+    text-align: left;
+    font-weight: $font-weight-regular;
+  }
+
+  thead th {
+    font-size: $text-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-gray-400;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: $spacing-2;
+  border-radius: 3px;
+  vertical-align: baseline;
+}
+
+// ---------- Erkenntnis-Karte ----------
+.insight {
+  display: flex;
+  flex-direction: column;
+}
+
+.insight__pair {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-4;
+  margin-block: $spacing-6;
+
+  > div {
+    padding: $spacing-5;
+    border-radius: $radius-md;
+    background: $color-offwhite;
+  }
+}
+
+.insight__label {
+  display: block;
+  font-size: $text-xs;
+  color: $color-gray-500;
+}
+
+.insight__value {
+  display: block;
+  margin-top: $spacing-2;
+  font-size: $text-4xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: 1;
+
+  small {
+    margin-left: $spacing-1;
+    font-size: $text-sm;
+    font-weight: $font-weight-medium;
+    color: $color-gray-500;
+  }
+}
+
+// ---------- Fazit ----------
+.verdict {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-6;
+
+  @media (min-width: $bp-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.verdict__col {
+  padding: $spacing-7 $spacing-6;
+  border-radius: $radius-lg;
+  background: #161617;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+    font-size: $text-2xl;
+    margin-bottom: $spacing-3;
+  }
+
+  .prose {
+    color: $color-gray-400;
+    line-height: $line-height-loose;
+  }
+}
+
+.verdict__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: $text-lg;
+}
+
+.verdict__icon--down {
+  background: rgba(52, 199, 89, 0.18);
+  color: #34c759;
+}
+
+.verdict__icon--up {
+  background: rgba(255, 159, 10, 0.18);
+  color: #ff9f0a;
+}
+
+.verdict__cta {
+  margin-top: $spacing-8;
+  text-align: center;
+}
