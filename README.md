@@ -9,8 +9,8 @@
 
 | Name | Major task |
 |--------|------------|
-| Student 1 |  Aaron Stupf          |
-| Student 2 |  Sebastian Lischer          |
+| Aaron Stupf |  Rechner   |
+| Sebastian Lischer |  Analyse |
 
 
 
