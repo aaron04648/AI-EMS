@@ -21,9 +21,10 @@
 
 ### Pitch
 
-> ⚠️ **Deliverable - 15.10.2026:** Write a short pitch.
-
-*Write a 3 to 5 sentence pitch using [this](https://www.linkedin.com/posts/maabrahams_how-to-make-a-compelling-quick-pitch-activity-7179128237782970369-Qa6o/) as a guideline.*
+> Since 2026, Swiss households can choose dynamic electricity tariffs such as the one from EKZ, whose price changes every 15 minutes – yet hardly anyone knows why prices rise and fall or how much shifting consumption is actually worth.
+> Intelligent EMS analyses Swiss and European day-ahead prices and generation data from energy-charts.info to explain the drivers behind these price swings.
+> Building on this analysis, our calculator forecasts a household's PV production with MeteoSwiss weather data and uses model predictive control to plan when a home battery should charge, discharge, buy or sell electricity.
+> A backtest against a no-battery baseline and a simple self-consumption rule shows in Swiss francs how much a household saves – turning a confusing tariff into a concrete, data-driven decision.
 
 ---
 
