@@ -20,11 +20,7 @@
 > 
 
 ### Pitch
-
-> Since 2026, Swiss households can choose dynamic electricity tariffs such as the one from EKZ, whose price changes every 15 minutes – yet hardly anyone knows why prices rise and fall or how much shifting consumption is actually worth.
-> Intelligent EMS analyses Swiss and European day-ahead prices and generation data from energy-charts.info to explain the drivers behind these price swings.
-> Building on this analysis, our calculator forecasts a household's PV production with MeteoSwiss weather data and uses model predictive control to plan when a home battery should charge, discharge, buy or sell electricity.
-> A backtest against a no-battery baseline and a simple self-consumption rule shows in Swiss francs how much a household saves – turning a confusing tariff into a concrete, data-driven decision.
+Dynamic electricity tariffs are coming to Switzerland across most utilities, though they are currently only available in select regions like Zurich via EKZ. Our primary focus is analyzing European market factors to demystify these price swings and accurately simulate day-ahead prices 24 hours in advance. Building on this transparent analysis, an optional calculator demonstrates a practical use case: optimizing energy usage to save up to 0.15 CHF per 15-minute interval—roughly 500 CHF annually—while helping attract more people to solar power and driving overall sustainability.
 
 ---
 
@@ -32,17 +28,18 @@
 
 ## Problem Statement
 
-> ⚠️ **Deliverable - 22.10.2026:** Write a short problem statement.
-
-*Describe the problem that should be solved in two sentences.*
+As Swiss utilities increasingly adopt dynamic 15-minute electricity tariffs, most households remain completely unaware of the underlying European market drivers causing price fluctuations and how to leverage them. Without transparent market analysis and predictive tooling, consumers miss out on significant cost savings and remain hesitant to invest in photovoltaic systems and home batteries.
 
 ## Goals
 
-> ⚠️ **Deliverable - 22.10.2026:** Formulate goals for you project.
+### 1. Core Market Analysis & 24h Price Simulation:
+By the end of the semester, we aim to develop and validate a transparent analysis engine processing European day-ahead prices and generation data (via energy-charts.info) to explain price drivers. Success is explicitly measured by achieving a Mean Absolute Error (MAE) of under 10% in our 24-hour day-ahead price forecasts compared to actual market outcomes.
 
-*Which goals are you aiming for? Define 2 to 4 goals. Goals should follow the [SMART](https://www.atlassian.com/blog/productivity/how-to-write-smart-goals) definition, with a focus on measurability.*
+### 2. Optional Predictive Use-Case & Impact Calculator:
+ Within the same timeframe, we will implement an optional model predictive control calculator to simulate household PV production and battery storage schedules. This will be measured by its ability to quantify concrete financial benefits—demonstrating savings of up to 0.15 CHF per 15-minute interval (roughly 500 CHF annually)—while successfully proving how such transparency incentivizes solar adoption and enhances ecological sustainability.
 
----
+### 3. Documentation & Expert Validation:
+We will finalize a comprehensive technical report and interactive demonstration by project completion, validating the usability and practical viability of our system through a dedicated presentation and review with the company Plan-E after the final discussion.
 
 # 2. Data Understanding
 
