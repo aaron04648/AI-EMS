@@ -13,6 +13,7 @@ Der Rechner und das Dashboard sind nicht Teil dieses Ordners.
 | 3 Features & Baselines | `03_baseline.py` | `output/baseline/` (Persistenz, Profil, Ridge) |
 | 4 LightGBM, Tuning, SHAP | `04_model.py` | `output/model/` (Metriken, Grafiken, SHAP, gespeichertes Modell) |
 | 5 Rollende 24h-Prognose | `05_forecast.py` | `web/public/forecast/forecast.json` → Dashboard unter `/analyse` |
+| 6 Zielwert-Analyse nMAE | `06_zielwert.py` | `output/zielwert/` (Volatilität 2015–2026, naive nMAE je Jahr/Monat, rMAE vs. Literatur) |
 
 Quellen für den Bericht: [`QUELLEN.txt`](QUELLEN.txt).
 
@@ -25,6 +26,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python 03_baseline.py
 .venv/bin/python 04_model.py        # --trials N für die Grösse der Hyperparameter-Suche
 .venv/bin/python 05_forecast.py     # nach 01: Prognose ab jetzt für 24 h (--now "YYYY-MM-DD HH:MM" für einen anderen Zeitpunkt)
+.venv/bin/python 06_zielwert.py     # nach 04: lädt CH-Preise ab 2015 (eigener Cache) und begründet den Zielwert
 ```
 
 Das Dashboard (`web/src/app/pages/analysis/`) liest nur `web/public/forecast/forecast.json`. Diese Datei wird mit
@@ -43,7 +45,16 @@ vorhergesagt. Damit kein Leakage entsteht, gilt Folgendes:
 - Dazu kommen Kalender-Features: Stunde, Wochentag, Wochenende, Feiertag sowie Monat und Tag im Jahr (Sinus/Kosinus).
 
 **Metrik.** `nMAE = MAE / mittlerer Absolutpreis`. Einen MAPE kann man bei Preisen um 0 bzw. bei
-negativen Preisen nicht sinnvoll berechnen.
+negativen Preisen nicht sinnvoll berechnen. Ergänzend `rMAE = MAE_Modell / MAE_Persistenz-168-h`
+(Lago et al. 2021): Der rMAE ist zwischen Perioden vergleichbar, der nMAE nicht (siehe „Zielwert“).
+
+**Zielwert (`06_zielwert.py`).** Der nMAE hängt stark davon ab, wie stark die Preise in der
+Auswertungsperiode schwanken. Die naive Wochen-Persistenz kommt 2015–2026 je Jahr auf 14–25 %
+(Ø 17.6 %), je Monat auf 7–46 %. Im Holdout liegt sie bei 17.7 %, also genau im langjährigen Mittel.
+State-of-the-art-Modelle erreichen laut Lago et al. (2021) einen rMAE von 0.38–0.68. Bei
+durchschnittlicher Volatilität entspricht das einem nMAE von 6.7–12.0 %. **nMAE < 10 %** entspricht
+einem rMAE von ≈ 0.57. Das Ziel ist damit anspruchsvoll, aber realistisch. Es gilt nur über
+≥ 12 Monate (ganzer Saisonzyklus) und nur mit dem rMAE als Kontrolle.
 
 **Validierung.**
 - Tuning: Zufallssuche mit `TimeSeriesSplit` (5 Folds à 60 Tage, 24 h Lücke) auf den Daten vor dem 1.10.2025.
@@ -70,7 +81,9 @@ Holdout 01.10.2025 – 23.10.2026 (9'312 Stunden, Ø Absolutpreis 126 EUR/MWh):
 | Profil 14 Tage (heutiger Fallback im Rechner) | 18.10 | 14.3 % |
 | Persistenz 24 h (Baseline) | 18.15 | 14.4 % |
 
-- **Ziel nMAE < 10 % erreicht.** Der Fehler liegt 39 % unter der Persistenz-Baseline.
+- **Ziel nMAE < 10 % erreicht.** Der Fehler liegt 39 % unter der Persistenz-Baseline. Der rMAE
+  gegenüber der Wochen-Persistenz beträgt 0.49 (ohne Netzbetreiber-Prognosen 0.58). Das liegt im
+  State-of-the-art-Bereich von Lago et al. (2021): 0.38–0.68.
 - Winter: 4–6 %. Frühling/Sommer: 9–18 %, der schwierigste Monat ist April 2026. Fehler entstehen vor allem durch
   Mittags-Preiseinbrüche mit stark negativen Preisen bei viel Solar über Feiertage/Wochenenden. Das Modell
   trifft die Richtung, aber nicht die volle Tiefe (siehe `output/model/02_beispielwochen.png`).

@@ -78,6 +78,18 @@ def plot_style() -> None:
 TEST_START = pd.Timestamp("2025-10-01", tz=TZ).tz_convert("UTC")
 
 
+def profile_forecast(y: pd.Series, days: int = 14) -> pd.Series:
+    """Für jeden Tag D: Mittel der letzten `days` Tage bis D-1, je Stunde und Tagtyp (Werktag/Wochenende)."""
+    local = y.index.tz_convert(TZ)
+    frame = pd.DataFrame({"y": y.values, "date": local.normalize(), "hour": local.hour,
+                          "weekend": local.day_of_week >= 5}, index=y.index)
+    table = frame.pivot_table(index="date", columns=["weekend", "hour"], values="y")
+    # Je Tagtyp: Tage des anderen Typs sind NaN und fallen aus dem Mittel; shift(1) → nur Vergangenheit
+    roll = table.rolling(days, min_periods=2).mean().shift(1).stack(level=[0, 1], future_stack=True)
+    key = pd.MultiIndex.from_arrays([frame["date"], frame["weekend"], frame["hour"]])
+    return pd.Series(roll.reindex(key).to_numpy(), index=y.index)
+
+
 def metrics(y_true: pd.Series, y_pred: pd.Series) -> dict[str, float]:
     """MAE, normierter MAE (MAE / mittlerer Absolutpreis) und RMSE.
 
