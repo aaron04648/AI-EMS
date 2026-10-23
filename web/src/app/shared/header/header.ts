@@ -2,10 +2,11 @@ import { Component, HostListener, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { SITE } from '../../core/site.config';
 import { Logo } from '../logo';
+import { ThemeToggle } from '../theme-toggle';
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, RouterLinkActive, Logo],
+  imports: [RouterLink, RouterLinkActive, Logo, ThemeToggle],
   templateUrl: './header.html',
   styleUrl: './header.scss',
 })

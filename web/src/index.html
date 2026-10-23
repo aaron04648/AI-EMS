@@ -10,6 +10,17 @@
       content="Warum Strompreise steigen und sinken: Analyse der Day-Ahead-Preise in der Schweiz und Europa (Energy-Charts) und Sparrechner für den dynamischen EKZ-Tarif."
     />
     <meta name="theme-color" content="#ffffff" />
+    <script>
+      // Theme vor dem Start der App setzen – verhindert ein Aufblitzen im falschen Modus
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('ai-ems-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

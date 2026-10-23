@@ -84,8 +84,8 @@ export class BarChart {
   readonly unit = input('');
   readonly digits = input(0);
   readonly height = input(240);
-  readonly color = input('#86b6ef');
-  readonly highlightColor = input('#2a78d6');
+  readonly color = input('var(--bar)');
+  readonly highlightColor = input('var(--bar-hl)');
   readonly ariaLabel = input('Balkendiagramm');
 
   protected readonly hover = signal<number | null>(null);
