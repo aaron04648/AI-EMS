@@ -1,0 +1,9 @@
+,mean_abs_shap_eur_mwh
+Wetter sonstiges,0.196
+Kalender,0.752
+Solar-Prognose,1.833
+Wind-Prognose,2.099
+Wasserkraft & Austausch (Lags),2.407
+Nachbarpreise (Lags),3.980
+Preisniveau (Lags CH),13.972
+Last/Residuallast-Prognose,16.849
