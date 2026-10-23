@@ -1,0 +1,3 @@
+# grosse, reproduzierbare Artefakte (04_model.py erzeugt sie neu)
+output/model/shap_values.csv
+output/model/lgbm_ch_dayahead.txt
