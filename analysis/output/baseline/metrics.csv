@@ -1,0 +1,5 @@
+Modell,MAE,nMAE_%,RMSE,n
+Persistenz 24 h,18.155,14.369,31.622,9312
+Persistenz 168 h,22.350,17.690,36.092,9312
+Profil 14 Tage,18.099,14.325,28.918,9312
+Ridge-Regression,12.823,10.149,19.888,9312

@@ -1,0 +1,23 @@
+Treiber,Pearson r,Spearman ρ,n
+Preis AT,0.845,0.898,24646
+Preis IT-Nord,0.807,0.798,24646
+Preis DE,0.789,0.780,24646
+Preis FR,0.762,0.712,24646
+Steinkohle DE,0.603,0.679,24615
+Gas DE,0.572,0.661,24615
+Residuallast DE+CH,0.571,0.529,24611
+Residuallast DE,0.554,0.512,24614
+Residuallast CH,0.496,0.468,24611
+EE-Anteil Last DE,-0.518,-0.458,24614
+Wind+Solar DE,-0.372,-0.324,24615
+Last DE,0.317,0.320,24615
+EE-Anteil Last CH,-0.305,-0.314,24611
+Temperatur Zürich (Prognose),-0.256,-0.285,24202
+Solar CH,-0.452,-0.280,24611
+Laufwasser CH,-0.226,-0.280,24614
+Solar DE,-0.442,-0.255,24614
+Speicherkraft CH,0.191,0.170,24614
+Last CH,0.122,0.156,24611
+Kernkraft CH,0.125,0.112,24614
+Nettoimport CH,0.030,0.054,24646
+Wind onshore DE,0.010,0.009,24615
