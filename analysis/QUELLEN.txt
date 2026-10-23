@@ -1,0 +1,103 @@
+QUELLENVERZEICHNIS – AI-EMS: Marktanalyse und 24h-Preisprognose Schweiz
+=========================================================================
+Stand / Datenabruf: 22.10.2026
+Betrachteter Zeitraum: 01.01.2024 bis 23.10.2026 (stündlich, Zeitstempel UTC)
+
+
+A) DATENQUELLEN (automatisiert per API geladen, analysis/01_fetch_data.py)
+-------------------------------------------------------------------------
+
+[1] Energy-Charts REST-API, Fraunhofer-Institut für Solare Energiesysteme ISE, Freiburg.
+    https://api.energy-charts.info/   (Swagger-Dokumentation, ohne API-Key)
+    Lizenz: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), Angabe der Originalquelle je Reihe.
+    Genutzte Endpunkte:
+      - /price?bzn=CH | DE-LU | FR | IT-North | AT
+            Day-Ahead-Börsenstrompreise (EUR/MWh), 60 min bzw. ab 01.10.2025 15 min.
+            Zielgrösse des Modells = CH Day-Ahead.
+      - /public_power?country=ch | de | fr | it | at
+            Öffentliche Nettostromerzeugung nach Energieträger, Last, Residuallast,
+            erneuerbarer Anteil an Last und Erzeugung (MW bzw. %).
+      - /public_power_forecast?country=..&production_type=solar|wind_onshore|wind_offshore|load
+            &forecast_type=day-ahead
+            Day-Ahead-Prognosen der Netzbetreiber für Solar, Wind und Last (MW).
+            (Die Primärdaten stammen von der ENTSO-E Transparency Platform, siehe [6].)
+      - /cbet?country=ch
+            Grenzüberschreitender physikalischer Stromaustausch der Schweiz je Nachbarland (GW).
+    Hinweis: /signal (Grünstrom-Ampel) liefert nur den aktuellen bzw. nächsten Tag, keine Historie;
+    für die Analyse wird stattdessen "Renewable share of load" aus /public_power verwendet.
+
+[2] Open-Meteo Previous-Runs-API (Wetterprognosen, wie sie am Vortag vorlagen).
+    https://open-meteo.com/en/docs/previous-runs-api
+    Endpunkt: https://previous-runs-api.open-meteo.com/v1/forecast  (Variablen *_previous_day1)
+    Variablen: temperature_2m, shortwave_radiation, cloud_cover, wind_speed_100m, precipitation
+    Punkte: Zürich, Bern, Genf, Lugano, Sion, München, Hamburg.
+    Lizenz: CC BY 4.0, "Weather data by Open-Meteo.com" (https://open-meteo.com/en/license).
+    Zugrunde liegende Wettermodelle (best_match): u. a. MeteoSchweiz ICON-CH1/CH2, DWD ICON, ECMWF IFS.
+    MeteoSchweiz-Modelldaten: https://open-meteo.com/en/docs/meteoswiss-api
+
+[3] Schweizer Feiertage: Python-Paket "holidays" 0.107 (vacanza), Kanton Zürich.
+    https://github.com/vacanza/holidays  (MIT-Lizenz)
+
+
+B) VISUELLE ANALYSE / REFERENZ-CHARTS (energy-charts.info, Fraunhofer ISE)
+-------------------------------------------------------------------------
+
+[4] Stromproduktion und Börsenstrompreise Schweiz:
+    https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH
+    (dasselbe für Deutschland: https://www.energy-charts.info/charts/power/chart.htm?l=de&c=DE)
+[5] Börsenstrompreise & Handelsvolumen (Day-Ahead 15 min / 60 min):
+    https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH
+    Grenzüberschreitender Stromhandel Schweiz:
+    https://www.energy-charts.info/charts/import_export/chart.htm?l=de&c=CH
+    Erneuerbarer Anteil an der Last:
+    https://www.energy-charts.info/charts/renewable_share/chart.htm?l=de&c=CH
+
+
+C) WEITERE (PRIMÄR-)QUELLEN – nicht per API genutzt, manueller CSV-Download möglich
+-------------------------------------------------------------------------
+
+[6] ENTSO-E Transparency Platform (Primärquelle für Preise, Last- und Erzeugungsprognosen).
+    https://transparency.entsoe.eu/
+    API-Token nur mit (kostenlosem) Account; Python-Paket entsoe-py: https://github.com/EnergieID/entsoe-py
+    CSV-Exporte (Login nötig, "Export Data" je Seite):
+      - Day-Ahead-Preise:            Transmission > Day-ahead Prices (Bidding Zone CH)
+      - Lastprognose:                Load > Total Load - Day Ahead / Actual (Control Area CH)
+      - Wind-/Solar-Prognose:        Generation > Generation Forecasts for Wind and Solar
+      - Erzeugung je Energieträger:  Generation > Actual Generation per Production Type
+
+[7] Swissgrid – Energieübersicht Schweiz (Last, Produktion, Austausch, 15 min, Excel je Jahr):
+    https://www.swissgrid.ch/de/home/operation/grid-data/generation.html
+
+[8] Open Power System Data (OPSD) – bereinigte europäische Zeitreihen (bis 2020):
+    https://open-power-system-data.org/   bzw. https://data.open-power-system-data.org/time_series/
+
+
+D) SOFTWARE
+-------------------------------------------------------------------------
+
+[9]  LightGBM 4.7: Ke, G. et al. (2017). LightGBM: A Highly Efficient Gradient Boosting Decision Tree.
+     Advances in Neural Information Processing Systems 30 (NeurIPS 2017). https://github.com/microsoft/LightGBM
+[10] SHAP 0.54: Lundberg, S. M. & Lee, S.-I. (2017). A Unified Approach to Interpreting Model Predictions.
+     NeurIPS 30.  Lundberg, S. M. et al. (2020). From local explanations to global understanding with
+     explainable AI for trees. Nature Machine Intelligence 2, 56–67. https://github.com/shap/shap
+[11] scikit-learn 1.9 (TimeSeriesSplit, Ridge): Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning
+     in Python. Journal of Machine Learning Research 12, 2825–2830. https://scikit-learn.org
+[12] pandas 3.1, NumPy 2.5, Matplotlib 3.11 (Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment.
+     Computing in Science & Engineering 9(3), 90–95).
+
+
+E) METHODISCHE LITERATUR UND MARKTREGELN
+-------------------------------------------------------------------------
+
+[13] Lago, J., Marcjasz, G., De Schutter, B. & Weron, R. (2021). Forecasting day-ahead electricity prices:
+     A review of state-of-the-art algorithms, best practices and an open-access benchmark.
+     Applied Energy 293, 116983. https://doi.org/10.1016/j.apenergy.2021.116983
+     (Feature-Wahl mit Preis-Lags 24/48/168 h, Last-/EE-Prognosen; Persistenz als Baseline; rMAE)
+[14] Weron, R. (2014). Electricity price forecasting: A review of the state-of-the-art with a look into
+     the future. International Journal of Forecasting 30(4), 1030–1081.
+     https://doi.org/10.1016/j.ijforecast.2014.08.001
+[15] Verordnung (EU) Nr. 543/2013 der Kommission vom 14. Juni 2013 über die Übermittlung und die
+     Veröffentlichung von Daten in Strommärkten (Transparenz-Verordnung), Art. 6 und 14 – Publikationsfristen
+     für Last- bzw. Wind-/Solarprognosen (Day-Ahead).  https://eur-lex.europa.eu/eli/reg/2013/543/oj
+[16] EPEX SPOT – Day-Ahead-Markt (Auktionszeiten, Schweizer Auktion 11:00, gekoppelte EU-Auktion 12:00).
+     https://www.epexspot.com/en/market-segments/day-ahead-trading
