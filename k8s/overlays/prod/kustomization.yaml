@@ -12,8 +12,8 @@ labels:
       environment: production
 images:
   - name: ghcr.io/aaron04648/ai-ems-web
-    newTag: 7eeb398096b3c2726739f2d90ef236a3893cb017
+    newTag: 4b7e0e0313031df95536b7e31380b7b0eb4f3b6a
   - name: ghcr.io/aaron04648/ai-ems-fetcher
-    newTag: 7eeb398096b3c2726739f2d90ef236a3893cb017
+    newTag: 4b7e0e0313031df95536b7e31380b7b0eb4f3b6a
   - name: ghcr.io/aaron04648/ai-ems-api
-    newTag: 7eeb398096b3c2726739f2d90ef236a3893cb017
+    newTag: 4b7e0e0313031df95536b7e31380b7b0eb4f3b6a
