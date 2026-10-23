@@ -226,9 +226,12 @@ def run(req: SimulationRequest) -> dict:
     load_actual = load_model.actual(index, req.household.annual_kwh).to_numpy()
     load_forecast = load_model.forecast(index, req.household.annual_kwh).to_numpy()
 
+    # Ist-Preise im Fenster; fehlende Werte (z. B. energy-charts nicht erreichbar) statistisch ergänzen
+    window_import = tariff_forecast.complete(price_import, index, price_import)
+    window_export = tariff_forecast.complete(price_export, index, price_export)
+    estimated = int(price_import.reindex(index).isna().sum() + price_export.reindex(index).isna().sum())
     inp = Inputs(index, pv_actual, pv_forecast, load_actual, load_forecast,
-                 price_import.reindex(index).ffill(), price_export.reindex(index).ffill(),
-                 req.household.annual_kwh)
+                 window_import, window_export, req.household.annual_kwh)
 
     results = {}
     for strategy in ("none", "rbc", "mpc", "optimal"):
@@ -250,6 +253,7 @@ def run(req: SimulationRequest) -> dict:
         "price_export": np.round(inp.price_export.to_numpy(), 2).tolist(),
         "no_pv_cost_chf": round(no_pv_cost, 2),
         "pv_forecast_mae_kw": round(float(np.mean(np.abs(pv_error))), 3),
+        "estimated_prices": estimated,
         "strategies": results,
     }
 
@@ -263,7 +267,23 @@ def run(req: SimulationRequest) -> dict:
             "monthly_kwh": [round(v, 1) for v in yearly["monthly_kwh"]],
         },
         "backtest": backtest,
+        "tariffs": _tariff_days(price_import, price_export, now),
         "plan": _plan(req, model, bat, grid, soc0, now, price_import, price_export, oracle_export is None),
+    }
+
+
+def _tariff_days(price_import: pd.Series, price_export: pd.Series, now: pd.Timestamp) -> dict:
+    """Publizierte Tarife der letzten 14 Tage bis Ende der Publikation – für die Börsen-Ansicht."""
+    start = (now.tz_convert(TZ).normalize() - pd.Timedelta(days=13)).tz_convert("UTC")
+    end = tariffs.published_until(now)
+    index = pd.date_range(start, end, freq="15min", inclusive="left")
+    vo = price_import.reindex(index)
+    vi = price_export.reindex(index)
+    return {
+        "start": int(start.timestamp()),
+        "step": 900,
+        "import": [None if pd.isna(v) else round(float(v), 3) for v in vo],
+        "export": [None if pd.isna(v) else round(float(v), 2) for v in vi],
     }
 
 

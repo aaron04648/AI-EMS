@@ -66,20 +66,29 @@ def _snapshot() -> dict | None:
 def spot_ch(start: datetime, end: datetime) -> pd.Series:
     """Day-Ahead CH in Rp./kWh, auf 15 Minuten aufgefüllt (Index: UTC)."""
     snap = _snapshot()
+    snap_series = None
     if snap:
         index = pd.to_datetime([snap["start"] + i * snap["step"] for i in range(len(snap["values"]))], unit="s", utc=True)
         s = pd.Series(snap["values"], index=index, dtype=float).dropna()
+        snap_series = (s / 10 * EUR_CHF).resample("15min").ffill()
         wanted = s[(s.index >= pd.Timestamp(start)) & (s.index < pd.Timestamp(end) - pd.Timedelta(days=1))]
         expected = (pd.Timestamp(end) - pd.Timedelta(days=1) - pd.Timestamp(start)) / pd.Timedelta(hours=1)
         if len(wanted) >= 0.95 * expected:
-            return (s / 10 * EUR_CHF).resample("15min").ffill()
+            return snap_series
 
-    data = get_json(
-        ENERGY_CHARTS,
-        {"bzn": "CH", "start": start.strftime("%Y-%m-%d"), "end": (end + timedelta(days=1)).strftime("%Y-%m-%d")},
-        ttl=3600,
-        retries=6,
-    )
+    try:
+        data = get_json(
+            ENERGY_CHARTS,
+            {"bzn": "CH", "start": start.strftime("%Y-%m-%d"), "end": (end + timedelta(days=1)).strftime("%Y-%m-%d")},
+            ttl=3600,
+            retries=4,
+        )
+    except SourceError:
+        if snap_series is None:
+            raise
+        # Lieber ein älterer Snapshot als gar keine Daten – Lücken füllt die statistische Preisprognose
+        log.warning("energy-charts nicht erreichbar – verwende Snapshot bis %s", snap_series.index.max())
+        return snap_series
     s = pd.Series(data["price"], index=pd.to_datetime(data["unix_seconds"], unit="s", utc=True), dtype=float)
     s = s.dropna() / 10 * EUR_CHF
     return s.resample("15min").ffill()
