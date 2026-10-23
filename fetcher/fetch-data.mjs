@@ -13,7 +13,7 @@
 //   OUT_DIR           Zielordner (Standard: ../web/public/data)
 //   INTERVAL_MINUTES  Intervall im Loop-Modus (Standard: 180)
 // =============================================================
-import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -122,6 +122,15 @@ function resample(times, values, step, start, end, digits = 2) {
   };
 }
 
+/** Vorherige Version einer Datei (für Teilausfälle der Quelle) – oder null. */
+async function previous(name) {
+  try {
+    return JSON.parse(await readFile(join(OUT_DIR, name), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 async function writeJson(name, data) {
   await mkdir(OUT_DIR, { recursive: true });
   const target = join(OUT_DIR, name);
@@ -153,8 +162,14 @@ async function euPrices(now) {
       const d = await ec(`/price?bzn=${zone.code}&start=${isoDate(start)}&end=${isoDate(end)}`);
       zones.push({ ...zone, ...resample(d.unix_seconds, d.price, HOUR, start, end) });
     } catch (err) {
-      log(`Zone ${zone.code} übersprungen: ${err.message}`);
+      // Teilausfall: letzte bekannte Werte der Zone behalten
+      const old = (await previous('eu-prices.json'))?.zones?.find((z) => z.code === zone.code);
+      if (old) zones.push(old);
+      log(`Zone ${zone.code} ${old ? 'aus vorherigem Snapshot' : 'übersprungen'}: ${err.message}`);
     }
+  }
+  if (!zones.some((z) => z.values?.some((v) => v != null))) {
+    throw new Error('keine Zone verfügbar – vorhandene Datei bleibt bestehen');
   }
   return { unit: 'EUR/MWh', zones };
 }
@@ -220,8 +235,15 @@ async function powerMix(now) {
         result.ch = { start, step: HOUR, series: hourly };
       }
     } catch (err) {
-      log(`Erzeugungsmix ${c.country} übersprungen: ${err.message}`);
+      const prev = await previous('power-mix.json');
+      const old = prev?.countries?.find((x) => x.country === c.country);
+      if (old) result.countries.push(old);
+      if (c.country === 'ch' && prev?.ch) result.ch = prev.ch;
+      log(`Erzeugungsmix ${c.country} ${old ? 'aus vorherigem Snapshot' : 'übersprungen'}: ${err.message}`);
     }
+  }
+  if (!result.countries.length) {
+    throw new Error('kein Land verfügbar – vorhandene Datei bleibt bestehen');
   }
   return result;
 }
