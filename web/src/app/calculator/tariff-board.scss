@@ -1,0 +1,379 @@
+@use 'tokens' as *;
+
+:host {
+  display: block;
+  padding: $spacing-6;
+  border-radius: $radius-lg;
+  border: 1px solid $color-gray-100;
+  background: $surface-raised;
+  color: $color-ink;
+
+  @media (max-width: #{$bp-sm - 1px}) {
+    padding: $spacing-5 $spacing-4;
+  }
+}
+
+// ---------- Ticker ----------
+.ticker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: $spacing-3 $spacing-7;
+}
+
+.ticker__symbol {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticker__code {
+  font-size: $text-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.12em;
+  color: $color-accent;
+}
+
+.ticker__name {
+  font-size: $text-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.ticker__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $spacing-2;
+}
+
+.ticker__value {
+  font-size: clamp($text-4xl, 6vw, $text-5xl);
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker__unit {
+  color: $color-gray-400;
+}
+
+.ticker__change {
+  margin-left: $spacing-2;
+  white-space: nowrap;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker__when {
+  margin-left: auto;
+  font-size: $text-sm;
+  color: $color-gray-400;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: $spacing-3;
+  margin-top: $spacing-5;
+  padding-block: $spacing-4;
+  border-block: 1px solid $color-gray-100;
+
+  @media (max-width: #{$bp-sm - 1px}) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  dt {
+    font-size: $text-xs;
+    color: $color-gray-400;
+  }
+
+  dd {
+    margin-top: 2px;
+    font-size: $text-lg;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+
+    small {
+      font-size: $text-xs;
+      font-weight: $font-weight-regular;
+      color: $color-gray-400;
+    }
+  }
+}
+
+// ---------- Steuerung ----------
+.board__controls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-4;
+  margin-top: $spacing-5;
+}
+
+.pills {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: $radius-full;
+  background: $color-offwhite;
+
+  button {
+    padding: $spacing-1 $spacing-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-gray-500;
+    font: inherit;
+    font-size: $text-sm;
+    cursor: pointer;
+
+    &.is-active {
+      background: $color-ink;
+      color: $surface;
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  font-size: $text-sm;
+  color: $color-gray-500;
+  cursor: pointer;
+
+  input {
+    accent-color: var(--s2);
+  }
+}
+
+// ---------- Chart ----------
+.board__chart {
+  position: relative;
+  margin-top: $spacing-4;
+
+  svg {
+    display: block;
+    width: 100%;
+    touch-action: pan-y;
+  }
+}
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--chart-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tick--y {
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.tick--x {
+  text-anchor: middle;
+}
+
+.avg {
+  stroke: var(--chart-muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.area {
+  fill: var(--accent);
+  opacity: 0.07;
+}
+
+.seg {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.seg--v {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.wick {
+  stroke-width: 1.5;
+}
+
+.export {
+  fill: none;
+  stroke: var(--s2);
+  stroke-width: 1.5;
+  opacity: 0.9;
+}
+
+.now {
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.now__label {
+  fill: var(--accent);
+  font-size: 11px;
+}
+
+.crosshair {
+  stroke: var(--chart-muted);
+  stroke-width: 1;
+}
+
+.dot {
+  fill: $color-ink;
+  stroke: $surface-raised;
+  stroke-width: 2;
+}
+
+.tip {
+  position: absolute;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+  padding: $spacing-3;
+  border-radius: $radius-sm;
+  background: $glass-strong;
+  border: 1px solid $color-gray-100;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(12px);
+  font-size: $text-xs;
+  transform: translateX(14px);
+  pointer-events: none;
+
+  strong {
+    font-size: $text-sm;
+  }
+
+  em {
+    font-style: normal;
+    margin-left: $spacing-1;
+  }
+}
+
+.tip--left {
+  transform: translateX(calc(-100% - 14px));
+}
+
+.tip__action {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-top: $spacing-1;
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+}
+
+// ---------- MPC-Aktionen ----------
+.strip {
+  display: grid;
+  grid-template-columns: repeat(96, 1fr);
+  height: 14px;
+  margin-top: $spacing-2;
+
+  span {
+    display: block;
+  }
+}
+
+.strip__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-2 $spacing-4;
+  margin-top: $spacing-3;
+  list-style: none;
+  font-size: $text-xs;
+  color: $color-gray-500;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-2;
+  }
+
+  i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+}
+
+// ---------- Tages-Slider ----------
+.days {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-3;
+  margin-top: $spacing-6;
+}
+
+.days__step {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $color-gray-200;
+  border-radius: 50%;
+  background: $surface-raised;
+  color: $color-ink;
+  font-size: $text-lg;
+  line-height: 1;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.days__track {
+  flex: 1;
+  min-width: 0;
+
+  input {
+    width: 100%;
+    accent-color: $color-accent;
+  }
+}
+
+.days__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-1;
+  font-size: 10px;
+  color: $color-gray-400;
+
+  span {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .is-active {
+    color: $color-ink;
+    font-weight: $font-weight-semibold;
+  }
+
+  @media (max-width: #{$bp-md - 1px}) {
+    span:not(.is-active) {
+      visibility: hidden;
+    }
+  }
+}
+
+.empty {
+  color: $color-gray-400;
+}

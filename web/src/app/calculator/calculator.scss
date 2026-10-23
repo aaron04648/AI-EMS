@@ -5,7 +5,7 @@ $sidebar-width: 360px;
 :host {
   display: block;
   min-height: 100vh;
-  background: $color-white;
+  background: $surface;
 }
 
 // ---------- Topbar ----------
@@ -18,7 +18,7 @@ $sidebar-width: 360px;
   gap: $spacing-4;
   height: $header-height;
   padding-inline: $spacing-5;
-  background: rgba(251, 251, 253, 0.85);
+  background: $glass;
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid $color-gray-200;
@@ -63,12 +63,20 @@ $sidebar-width: 360px;
   }
 }
 
+.topbar__theme {
+  margin-left: $spacing-4;
+
+  @media (max-width: #{$bp-lg - 1px}) {
+    margin-left: auto;
+  }
+}
+
 .topbar__toggle {
   display: none;
   padding: $spacing-1 $spacing-3;
   border: 1px solid $color-gray-200;
   border-radius: $radius-full;
-  background: $color-white;
+  background: $surface-raised;
   font: inherit;
   font-size: $text-sm;
   cursor: pointer;
@@ -119,7 +127,7 @@ $sidebar-width: 360px;
   padding: 0;
   border: none;
   border-radius: $radius-md;
-  background: $color-white;
+  background: $surface-raised;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
   legend {
@@ -216,7 +224,7 @@ $sidebar-width: 360px;
     cursor: pointer;
 
     &.is-active {
-      background: $color-white;
+      background: $surface-raised;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
       font-weight: $font-weight-semibold;
     }
@@ -283,7 +291,7 @@ $sidebar-width: 360px;
     padding: $spacing-2 $spacing-3;
     border: 1px solid $color-gray-200;
     border-radius: $radius-sm;
-    background: $color-white;
+    background: $surface-raised;
     font: inherit;
 
     &:focus {
@@ -301,7 +309,7 @@ $sidebar-width: 360px;
   list-style: none;
   padding: $spacing-1;
   border-radius: $radius-sm;
-  background: $color-white;
+  background: $surface-raised;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 
   button {
@@ -347,49 +355,45 @@ $sidebar-width: 360px;
   max-width: calc(#{$sidebar-width} + 1180px);
 }
 
-.block {
-  margin-bottom: $spacing-10;
-}
-
-.block__head {
-  max-width: 760px;
-  margin-bottom: $spacing-6;
-
-  h2 {
-    font-size: clamp($text-2xl, 3vw, $text-4xl);
-    font-weight: $font-weight-bold;
-  }
-
-  p {
-    margin-top: $spacing-3;
-    color: $color-gray-500;
-    line-height: $line-height-loose;
-  }
-}
-
-.accent {
-  color: $color-accent;
-}
-
-.muted {
-  color: $color-gray-500;
-  font-size: $text-sm;
-}
-
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: $spacing-4;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-3;
+  margin-bottom: $spacing-5;
+
+  @media (min-width: $bp-md) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
 .kpi {
-  padding: $spacing-5;
+  padding: $spacing-4 $spacing-5;
   border-radius: $radius-md;
   background: $color-offwhite;
 }
 
+.kpi--hero {
+  background: $color-black;
+  color: $color-white;
+
+  .kpi__label,
+  .kpi__note,
+  small {
+    color: $color-gray-400 !important;
+  }
+
+  .kpi__value {
+    color: #34c759;
+  }
+}
+
 .kpi__label {
-  display: block;
+  display: flex;
+  align-items: center;
   font-size: $text-sm;
   color: $color-gray-500;
 }
@@ -397,10 +401,11 @@ $sidebar-width: 360px;
 .kpi__value {
   display: block;
   margin-top: $spacing-2;
-  font-size: $text-3xl;
+  font-size: $text-2xl;
   font-weight: $font-weight-bold;
   letter-spacing: $letter-spacing-tight;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 
   small {
     font-size: $text-base;
@@ -416,10 +421,109 @@ $sidebar-width: 360px;
   color: $color-gray-400;
 }
 
-// ---------- Fahrplan ----------
+// ---------- Ansicht: Bubbles ----------
+.bubbles {
+  position: sticky;
+  top: calc(#{$header-height} + #{$spacing-3});
+  z-index: 30;
+  display: inline-flex;
+  gap: $spacing-2;
+  margin-bottom: $spacing-6;
+  padding: 5px;
+  border-radius: $radius-full;
+  background: $glass-strong;
+  border: 1px solid $color-gray-100;
+  backdrop-filter: saturate(180%) blur(16px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  padding: $spacing-2 $spacing-5;
+  border: none;
+  border-radius: $radius-full;
+  background: transparent;
+  color: $color-ink;
+  font: inherit;
+  font-size: $text-base;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background-color $transition-base, color $transition-base, box-shadow $transition-base;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  &.is-active {
+    background: $color-accent;
+    color: $color-white;
+    box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+  }
+
+  @media (max-width: #{$bp-sm - 1px}) {
+    padding: $spacing-2 $spacing-4;
+    font-size: $text-sm;
+  }
+}
+
+// ---------- Grafikblatt ----------
+.sheet__title {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-4;
+  font-size: $text-2xl;
+}
+
+.card-chart {
+  min-width: 0;
+  padding: $spacing-5;
+  border: 1px solid $color-gray-100;
+  border-radius: $radius-lg;
+  background: $surface-raised;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    font-size: $text-lg;
+  }
+}
+
+.card-chart--wide {
+  margin-bottom: $spacing-5;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $spacing-5;
+  margin-bottom: $spacing-5;
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.topbar__method {
+  display: inline-flex;
+  align-items: center;
+  color: $color-ink;
+  opacity: 0.85;
+}
+
+// ---------- Ladeplan ----------
 .timeline {
   display: flex;
   height: 28px;
+  margin-top: $spacing-4;
   overflow: hidden;
   border-radius: $radius-sm;
   gap: 0;
@@ -463,57 +567,27 @@ $sidebar-width: 360px;
 }
 
 .events {
-  list-style: none;
-  margin-top: $spacing-6;
-  border-top: 1px solid $color-gray-100;
+  width: 100%;
+  margin-top: $spacing-5;
+  border-collapse: collapse;
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums;
 
-  li {
-    display: grid;
-    grid-template-columns: auto minmax(9rem, auto) 1fr auto;
-    align-items: center;
-    gap: $spacing-3;
-    padding: $spacing-3 0;
-    border-bottom: 1px solid $color-gray-100;
-    font-size: $text-sm;
+  td {
+    padding: $spacing-2;
+    border-top: 1px solid $color-gray-100;
+  }
 
-    @media (max-width: #{$bp-sm - 1px}) {
-      grid-template-columns: auto 1fr;
-
-      .events__label,
-      .events__value {
-        grid-column: 2;
-      }
-    }
+  .num {
+    text-align: right;
+    color: $color-gray-500;
+    white-space: nowrap;
   }
 }
 
 .events__time {
   font-weight: $font-weight-semibold;
-  font-variant-numeric: tabular-nums;
-}
-
-.events__value {
-  color: $color-gray-500;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.charts {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: $spacing-5;
-  margin-top: $spacing-6;
-}
-
-.charts--two {
-  @media (min-width: 1200px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.chart-card {
-  box-shadow: none;
-  border: 1px solid $color-gray-100;
+  white-space: nowrap;
 }
 
 // ---------- Tabelle ----------
@@ -638,54 +712,6 @@ $sidebar-width: 360px;
 .intro__mobile {
   display: none;
   margin-top: $spacing-6;
-}
-
-// ---------- Methode ----------
-.method {
-  padding-top: $spacing-8;
-  border-top: 1px solid $color-gray-100;
-}
-
-.method__steps {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: $spacing-5;
-  counter-reset: step;
-
-  li {
-    counter-increment: step;
-    padding: $spacing-5;
-    border-radius: $radius-md;
-    background: $color-offwhite;
-
-    &::before {
-      content: counter(step);
-      display: block;
-      margin-bottom: $spacing-2;
-      font-size: $text-3xl;
-      font-weight: $font-weight-bold;
-      color: $color-accent;
-    }
-  }
-
-  h3 {
-    font-size: $text-lg;
-  }
-
-  p {
-    margin-top: $spacing-2;
-    font-size: $text-sm;
-    color: $color-gray-500;
-    line-height: $line-height-loose;
-  }
-}
-
-.method__ref {
-  margin-top: $spacing-6;
-  font-size: $text-xs;
-  color: $color-gray-500;
-  line-height: $line-height-loose;
 }
 
 // ---------- Mobile: Sidebar als Overlay ----------
