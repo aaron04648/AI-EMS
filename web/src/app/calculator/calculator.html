@@ -15,9 +15,20 @@
       <span class="topbar__title">PV &amp; Batterie-Rechner</span>
     </a>
     <nav class="topbar__nav" aria-label="Rechner">
-      <a href="#methode">Methode</a>
+      <span class="topbar__method">
+        Methode
+        <app-help align="right" label="Methode erklären">
+          <strong>1 · PV-Modell</strong> – PVGIS-Zeitreihen 2020–2023 trainieren einen Gradient-Boosting-Regressor
+          (Einstrahlung, Sonnenstand, Temperatur → Leistung).<br />
+          <strong>2 · Wetter</strong> – MeteoSwiss ICON-CH1/CH2-Prognosen; Abrechnung mit SwissMetNet-Messungen.<br />
+          <strong>3 · Statistik</strong> – Last nach Standardlastprofil H0, Preise nach Publikation bzw. Mittel
+          derselben Viertelstunde der letzten 14 Tage.<br />
+          <strong>4 · MPC</strong> – MILP alle 15 min über 24 h nach Ruddick et al. (2024), Abschnitt 3.5.3.
+        </app-help>
+      </span>
       <a routerLink="/analyse">Preisanalyse</a>
     </nav>
+    <app-theme-toggle class="topbar__theme" />
   </header>
 
   <!-- ================= SIDEBAR: INPUTS ================= -->
@@ -207,269 +218,241 @@
         </ol>
       </section>
     } @else if (result(); as r) {
-      <!-- ---------- Kennzahlen ---------- -->
-      @if (backtest(); as b) {
-        <section class="block">
-          <header class="block__head">
-            <span class="eyebrow">Ergebnis · {{ form().place.label }}</span>
-            <h2>
-              @if (b.savingVsNone >= 0) {
-                Die MPC spart <span class="accent">CHF {{ fmt(b.savingVsNone, 2) }}</span> in {{ b.days }}
-                {{ b.days === 1 ? 'Tag' : 'Tagen' }}.
-              } @else {
-                Die Batterie lohnt sich in diesem Zeitraum nicht.
+      <!-- ---------- Ansicht wählen ---------- -->
+      <div class="bubbles" role="tablist" aria-label="Ansicht">
+        @for (v of views; track v.key) {
+          <button
+            type="button"
+            role="tab"
+            class="bubble"
+            [class.is-active]="view() === v.key"
+            [attr.aria-selected]="view() === v.key"
+            (click)="view.set(v.key)"
+          >
+            @switch (v.key) {
+              @case ('meteo') {
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.1 9.5 4.25 4.25 0 0 0 7 18Z" /></svg>
               }
-            </h2>
-            <p>
-              Gegenüber derselben PV-Anlage ohne Batterie – hochgerechnet ≈ CHF
-              {{ fmt(b.savingVsNone * b.yearFactor) }} pro Jahr (stark saisonabhängig).
-            </p>
-          </header>
-          <div class="kpis">
-            <div class="kpi">
-              <span class="kpi__label">Kosten mit MPC</span>
-              <span class="kpi__value">{{ fmt(b.mpc, 2) }} <small>CHF</small></span>
-              <span class="kpi__note">{{ b.days }} {{ b.days === 1 ? 'Tag' : 'Tage' }}, negativ = Erlös</span>
-            </div>
-            <div class="kpi">
-              <span class="kpi__label">Vorteil ggü. Eigenverbrauchsregel</span>
-              <span class="kpi__value">{{ fmt(b.savingVsRbc, 2) }} <small>CHF</small></span>
-              <span class="kpi__note">RBC-Benchmark aus dem Paper</span>
-            </div>
-            <div class="kpi">
-              <span class="kpi__label">Ausschöpfung des Optimums</span>
-              <span class="kpi__value">{{ pct(b.efficiency, 1) }}</span>
-              <span class="kpi__note">Vorteil MPC / Vorteil bei perfekter Voraussicht</span>
-            </div>
-            <div class="kpi">
-              <span class="kpi__label">PV-Jahresertrag</span>
-              <span class="kpi__value">{{ fmt(r.pv_model.annual_kwh) }} <small>kWh</small></span>
-              <span class="kpi__note">PVGIS, {{ fmt(r.pv_model.annual_kwh / form().kwp) }} kWh/kWp</span>
-            </div>
-          </div>
+              @case ('boerse') {
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 5-7 4 4" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              }
+              @case ('statistik') {
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="3.5" height="9" rx="1" /><rect x="10.25" y="6" width="3.5" height="14" rx="1" /><rect x="16.5" y="13" width="3.5" height="7" rx="1" /></svg>
+              }
+            }
+            {{ v.label }}
+          </button>
+        }
+      </div>
+
+      <!-- ---------- Meteo ---------- -->
+      @if (view() === 'meteo') {
+        <section class="sheet" role="tabpanel" aria-label="Meteo">
+          <h2 class="sheet__title">
+            Wetter über der Schweiz
+            <app-help>
+              Modell ICON-CH2 von MeteoSwiss (2 km). Mit dem Slider oder ▶ durch die Stunden blättern:
+              Wolken und Sonne bestimmen die PV-Produktion, die der Fahrplan einplant.
+            </app-help>
+          </h2>
+          <app-weather-map [place]="form().place" [pv]="pvSeries()" />
         </section>
       }
 
-      <!-- ---------- Fahrplan ---------- -->
-      @if (plan(); as p) {
-        <section class="block">
-          <header class="block__head">
-            <span class="eyebrow">Fahrplan ab jetzt</span>
-            <h2>Wann laden, wann verkaufen.</h2>
-            <p>
-              Optimiert mit der MeteoSwiss-Prognose (ICON-CH1/CH2) und den EKZ-Tarifen. Tarife sind
-              publiziert bis {{ formatDayTime(p.publishedUntil) }} – danach (grau hinterlegt) nutzt die
-              MPC eine statistische Preisprognose.
-            </p>
-          </header>
+      <!-- ---------- Börse ---------- -->
+      @if (view() === 'boerse') {
+        <section class="sheet" role="tabpanel" aria-label="Börse">
+          <app-tariff-board [tariffs]="r.tariffs" [plan]="r.plan" />
+        </section>
+      }
 
-          <div class="timeline" role="img" aria-label="Zeitstrahl der Batterie-Aktionen">
-            @for (seg of p.timeline; track seg.from) {
-              <span
-                class="timeline__seg"
-                [style.width.%]="seg.width"
-                [style.background]="actions[seg.action].color"
-                [attr.title]="actions[seg.action].label + ': ' + formatTime(seg.from) + '–' + formatTime(seg.to)"
-              ></span>
-            }
-          </div>
-          <div class="timeline__axis">
-            <span>{{ formatDayTime(p.x[0]) }}</span>
-            <span>{{ formatDayTime(p.x[p.x.length - 1] + 900) }}</span>
-          </div>
-          <ul class="legend-row">
-            @for (k of actionKeys; track k) {
-              <li><span class="swatch" [style.background]="actions[k].color"></span>{{ actions[k].label }}</li>
-            }
-          </ul>
-
-          @if (p.events.length) {
-            <ul class="events">
-              @for (e of p.events; track e.from) {
-                <li>
-                  <span class="swatch" [style.background]="actions[e.action].color"></span>
-                  <span class="events__time">{{ formatDayTime(e.from) }} – {{ formatTime(e.to) }}</span>
-                  <span class="events__label">{{ actions[e.action].label }}</span>
-                  <span class="events__value">
-                    {{ fmt(e.energy, 1) }} kWh · Ø {{ fmt(e.price, 1) }} Rp.
-                    {{ e.action === 'sell' || e.action === 'solarCharge' ? 'Einspeisung' : 'Bezug' }}
-                  </span>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="muted">Im Planungshorizont lohnt sich kein aktiver Batterieeinsatz.</p>
+      <!-- ---------- Statistik ---------- -->
+      @if (view() === 'statistik') {
+        <section class="sheet" role="tabpanel" aria-label="Statistik">
+          @if (backtest(); as b) {
+            <div class="kpis">
+              <div class="kpi kpi--hero">
+                <span class="kpi__label">
+                  Ersparnis MPC
+                  <app-help>Gegenüber derselben PV-Anlage ohne Batterie im Backtest ({{ b.days }} {{ b.days === 1 ? 'Tag' : 'Tage' }}). Hochrechnung pro Jahr, stark saisonabhängig.</app-help>
+                </span>
+                <span class="kpi__value">{{ fmt(b.savingVsNone, 2) }} <small>CHF</small></span>
+                <span class="kpi__note">≈ {{ fmt(b.savingVsNone * b.yearFactor) }} CHF / Jahr</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">
+                  ggü. Eigenverbrauch
+                  <app-help>Vorteil der MPC gegenüber der Regel „Überschuss laden, Defizit entladen“ (RBC, Paper 3.5.2).</app-help>
+                </span>
+                <span class="kpi__value">{{ fmt(b.savingVsRbc, 2) }} <small>CHF</small></span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">
+                  Optimum erreicht
+                  <app-help>Anteil des Vorteils, den eine Regelung mit perfekter Voraussicht (Wetter, Last, Preise) erzielen würde.</app-help>
+                </span>
+                <span class="kpi__value">{{ pct(b.efficiency, 1) }}</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">Autarkie</span>
+                <span class="kpi__value">{{ pct(r.backtest.strategies.mpc.autarky) }}</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">
+                  PV-Jahresertrag
+                  <app-help>Langjähriges Mittel laut PVGIS für Standort, Neigung und Ausrichtung.</app-help>
+                </span>
+                <span class="kpi__value">{{ fmt(r.pv_model.annual_kwh) }} <small>kWh</small></span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">
+                  PV-Modell R²
+                  <app-help>Güte des Gradient-Boosting-Modells auf dem Testjahr {{ r.pv_model.test_year }}; mittlerer Fehler {{ fmt(r.pv_model.mae_w_per_kwp, 1) }} W/kWp, {{ fmt(r.pv_model.train_rows) }} Trainingsstunden.</app-help>
+                </span>
+                <span class="kpi__value">{{ fmt(r.pv_model.r2, 3) }}</span>
+              </div>
+            </div>
           }
 
-          <div class="charts">
-            <article class="chart-card">
-              <h3>Preise</h3>
-              <p>Rp./kWh – Bezug (EKZ Dynamisch inkl. Netz) und Einspeisevergütung.</p>
-              <app-line-chart [series]="p.prices" [x]="p.x" [bands]="p.bands" bandColor="rgba(134,134,139,0.12)" [xFormat]="hourTick" [tooltipTitle]="formatDayTime" unit="Rp./kWh" [digits]="1" [height]="220" ariaLabel="Preise im Planungshorizont" />
+          @if (plan(); as p) {
+            <article class="card-chart card-chart--wide">
+              <h3>
+                Ladeplan
+                <app-help>
+                  Was die Batterie ab jetzt tun soll – optimiert mit MeteoSwiss-Prognose und EKZ-Tarifen
+                  (publiziert bis {{ formatDayTime(p.publishedUntil) }}, danach statistische Preisprognose).
+                </app-help>
+              </h3>
+              <div class="timeline" role="img" aria-label="Zeitstrahl der Batterie-Aktionen">
+                @for (seg of p.timeline; track seg.from) {
+                  <span
+                    class="timeline__seg"
+                    [style.width.%]="seg.width"
+                    [style.background]="actions[seg.action].color"
+                    [attr.title]="actions[seg.action].label + ': ' + formatTime(seg.from) + '–' + formatTime(seg.to)"
+                  ></span>
+                }
+              </div>
+              <div class="timeline__axis">
+                <span>{{ formatDayTime(p.x[0]) }}</span>
+                <span>{{ formatDayTime(p.x[p.x.length - 1] + 900) }}</span>
+              </div>
+              <ul class="legend-row">
+                @for (k of actionKeys; track k) {
+                  <li><span class="swatch" [style.background]="actions[k].color"></span>{{ actions[k].label }}</li>
+                }
+              </ul>
+              @if (p.events.length) {
+                <table class="events">
+                  <tbody>
+                    @for (e of p.events; track e.from) {
+                      <tr>
+                        <td><span class="swatch" [style.background]="actions[e.action].color"></span></td>
+                        <td class="events__time">{{ formatDayTime(e.from) }} – {{ formatTime(e.to) }}</td>
+                        <td>{{ actions[e.action].label }}</td>
+                        <td class="num">{{ fmt(e.energy, 1) }} kWh</td>
+                        <td class="num">Ø {{ fmt(e.price, 1) }} Rp.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
             </article>
-            <article class="chart-card">
-              <h3>Leistungsflüsse</h3>
-              <p>kW – PV-Prognose, Verbrauch, Batterie und Netz laut Fahrplan.</p>
-              <app-line-chart [series]="p.power" [x]="p.x" [xFormat]="hourTick" [tooltipTitle]="formatDayTime" unit="kW" [digits]="2" [includeZero]="true" [height]="220" ariaLabel="Leistungsflüsse im Planungshorizont" />
-            </article>
-            <article class="chart-card">
-              <h3>Ladestand</h3>
-              <p>% der Kapazität. Prognostizierte Kosten im Horizont: CHF {{ fmt(p.cost, 2) }}.</p>
-              <app-line-chart [series]="p.soc" [x]="p.x" [xFormat]="hourTick" [tooltipTitle]="formatDayTime" unit="%" [area]="true" [height]="180" ariaLabel="Ladestand der Batterie" />
-            </article>
-          </div>
-        </section>
-      }
 
-      <!-- ---------- Backtest ---------- -->
-      @if (backtest(); as b) {
-        <section class="block">
-          <header class="block__head">
-            <span class="eyebrow">Backtest · letzte {{ b.days }} {{ b.days === 1 ? 'Tag' : 'Tage' }}</span>
-            <h2>Vier Strategien, gleiche Bedingungen.</h2>
-            <p>
-              Die MPC sieht nur Prognosen (Wetter vom Vortag, statistische Last, publizierte oder
-              geschätzte Preise). Abgerechnet wird mit Messwerten der MeteoSwiss-Station
-              {{ b.station.name }} ({{ fmt(b.station.km, 1) }} km entfernt).
-            </p>
-          </header>
+            <div class="grid-2">
+              <article class="card-chart">
+                <h3>
+                  Ladestand · Plan
+                  <app-help>Prognostizierter Ladestand in % der Kapazität. Erwartete Kosten im Horizont: CHF {{ fmt(p.cost, 2) }}.</app-help>
+                </h3>
+                <app-line-chart [series]="p.soc" [x]="p.x" [xFormat]="hourTick" [tooltipTitle]="formatDayTime" unit="%" [area]="true" [height]="200" ariaLabel="Ladestand der Batterie" />
+              </article>
+              <article class="card-chart">
+                <h3>
+                  Leistungsflüsse · Plan
+                  <app-help>kW. Batterie: + laden, – entladen. Netz: + Bezug, – Einspeisung.</app-help>
+                </h3>
+                <app-line-chart [series]="p.power" [x]="p.x" [xFormat]="hourTick" [tooltipTitle]="formatDayTime" unit="kW" [digits]="2" [includeZero]="true" [height]="200" ariaLabel="Leistungsflüsse im Planungshorizont" />
+              </article>
+            </div>
+          }
 
-          <div class="charts charts--two">
-            <article class="chart-card">
-              <h3>Kosten im Zeitraum</h3>
-              <p>CHF, bereinigt um den Ladestand am Ende. Negativ = Nettoerlös.</p>
-              <app-bar-chart [rows]="b.costs" unit="CHF" [digits]="2" ariaLabel="Kosten je Strategie" />
-            </article>
-            <article class="chart-card">
-              <h3>Kennzahlen</h3>
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Strategie</th>
-                    <th scope="col">Bezug</th>
-                    <th scope="col">Einsp.</th>
-                    <th scope="col">Autarkie</th>
-                    <th scope="col">Zyklen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of b.table; track row.key) {
-                    <tr [class.is-highlight]="row.key === 'mpc'">
-                      <th scope="row">{{ row.label }}</th>
-                      <td>{{ fmt(row.import_kwh, 1) }} kWh</td>
-                      <td>{{ fmt(row.export_kwh, 1) }} kWh</td>
-                      <td>{{ pct(row.autarky) }}</td>
-                      <td>{{ fmt(row.cycles, 1) }}</td>
+          @if (backtest(); as b) {
+            <div class="grid-2">
+              <article class="card-chart">
+                <h3>
+                  Kosten je Strategie
+                  <app-help>
+                    CHF im Backtest, bereinigt um den Ladestand am Ende; negativ = Nettoerlös. Abgerechnet mit Messwerten
+                    der MeteoSwiss-Station {{ b.station.name }} ({{ fmt(b.station.km, 1) }} km).
+                  </app-help>
+                </h3>
+                <app-bar-chart [rows]="b.costs" unit="CHF" [digits]="2" ariaLabel="Kosten je Strategie" />
+              </article>
+              <article class="card-chart">
+                <h3>Kennzahlen</h3>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Strategie</th>
+                      <th scope="col">Bezug</th>
+                      <th scope="col">Einsp.</th>
+                      <th scope="col">Autarkie</th>
+                      <th scope="col">Zyklen</th>
                     </tr>
-                  }
-                </tbody>
-              </table>
-            </article>
-          </div>
+                  </thead>
+                  <tbody>
+                    @for (row of b.table; track row.key) {
+                      <tr [class.is-highlight]="row.key === 'mpc'">
+                        <th scope="row">{{ row.label }}</th>
+                        <td>{{ fmt(row.import_kwh, 1) }} kWh</td>
+                        <td>{{ fmt(row.export_kwh, 1) }} kWh</td>
+                        <td>{{ pct(row.autarky) }}</td>
+                        <td>{{ fmt(row.cycles, 1) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </article>
+            </div>
 
-          <div class="charts">
-            <article class="chart-card">
-              <h3>Ladestand im Vergleich</h3>
-              <p>% der Kapazität. Die Eigenverbrauchsregel lädt nur mit Überschuss, die MPC reagiert auf Preise.</p>
-              <app-line-chart [series]="b.soc" [x]="b.x" [xFormat]="formatDay" [tooltipTitle]="formatDayTime" unit="%" [height]="240" ariaLabel="Ladestand je Strategie" />
+            <article class="card-chart card-chart--wide">
+              <h3>
+                Ladestand im Backtest
+                <app-help>Die Eigenverbrauchsregel lädt nur mit Überschuss; MPC und Optimum laden und entladen preisabhängig.</app-help>
+              </h3>
+              <app-line-chart [series]="b.soc" [x]="b.x" [xFormat]="dayHourTick" [tooltipTitle]="formatDayTime" unit="%" [height]="240" ariaLabel="Ladestand je Strategie" />
             </article>
-            <article class="chart-card">
-              <h3>PV: Prognose gegen Messung</h3>
-              <p>kW – mittlerer absoluter Prognosefehler {{ fmt(b.pvMae, 2) }} kW.</p>
-              <app-line-chart [series]="b.pv" [x]="b.x" [xFormat]="formatDay" [tooltipTitle]="formatDayTime" unit="kW" [digits]="2" [height]="220" ariaLabel="PV-Prognose und Ist-Produktion" />
-            </article>
-            <article class="chart-card">
-              <h3>Preise im Backtest</h3>
-              <p>Rp./kWh – tatsächliche EKZ-Tarife und Einspeisevergütung.</p>
-              <app-line-chart [series]="b.prices" [x]="b.x" [xFormat]="formatDay" [tooltipTitle]="formatDayTime" unit="Rp./kWh" [digits]="1" [height]="200" ariaLabel="Preise im Backtest" />
-            </article>
-          </div>
+
+            <div class="grid-2">
+              <article class="card-chart">
+                <h3>
+                  PV · Prognose vs. Messung
+                  <app-help>Prognose vom Vortag (ICON-CH2) gegen die mit MeteoSwiss-Messungen berechnete Produktion. Mittlerer Fehler {{ fmt(b.pvMae, 2) }} kW.</app-help>
+                </h3>
+                <app-line-chart [series]="b.pv" [x]="b.x" [xFormat]="dayHourTick" [tooltipTitle]="formatDayTime" unit="kW" [digits]="2" [height]="220" ariaLabel="PV-Prognose und Ist-Produktion" />
+              </article>
+              <article class="card-chart">
+                <h3>
+                  Ø Monatsertrag
+                  <app-help>kWh pro Monat laut PVGIS für {{ fmt(form().kwp, 1) }} kWp.</app-help>
+                </h3>
+                <app-bar-chart [rows]="monthly()" orientation="vertical" unit="kWh" [height]="220" ariaLabel="Monatlicher PV-Ertrag" />
+              </article>
+            </div>
+          }
         </section>
       }
-
-      <!-- ---------- Modell ---------- -->
-      <section class="block">
-        <header class="block__head">
-          <span class="eyebrow">PV-Modell</span>
-          <h2>Gelernt aus vier Jahren PVGIS.</h2>
-          <p>
-            Gradient-Boosting-Regressor, trainiert auf {{ fmt(r.pv_model.train_rows) }} Sonnenstunden
-            (Einstrahlung, Sonnenstand, Temperatur → Leistung Ihrer Anlage). Test auf dem Jahr
-            {{ r.pv_model.test_year }}: R² = {{ fmt(r.pv_model.r2, 3) }}, mittlerer Fehler
-            {{ fmt(r.pv_model.mae_w_per_kwp, 1) }} W/kWp. Rechenzeit: {{ fmt(r.meta.duration_s, 1) }} s.
-          </p>
-        </header>
-        <article class="chart-card">
-          <h3>Ø Monatsertrag</h3>
-          <p>kWh pro Monat laut PVGIS (langjähriges Mittel) für {{ fmt(form().kwp, 1) }} kWp.</p>
-          <app-bar-chart [rows]="monthly()" orientation="vertical" unit="kWh" [height]="200" ariaLabel="Monatlicher PV-Ertrag" />
-        </article>
-      </section>
     } @else {
       <!-- ---------- Startzustand ---------- -->
       <section class="intro">
         <span class="eyebrow">PV &amp; Batterie-Rechner</span>
         <h2>Wann sollte Ihre Batterie laden – und wann verkaufen?</h2>
         <p class="lead">
-          Geben Sie links Standort, PV-Anlage und Batterie an und drücken Sie
-          <strong>Berechnen</strong>. Der Rechner erstellt einen Fahrplan ab jetzt und testet die
-          Regelung rückblickend an echten Wetter- und Tarifdaten.
+          Links Standort, PV-Anlage und Batterie angeben und <strong>Berechnen</strong> drücken.
         </p>
         <button type="button" class="btn btn--secondary intro__mobile" (click)="sidebarOpen.set(true)">Eingaben öffnen</button>
       </section>
     }
-
-    <!-- ---------- Methode ---------- -->
-    <section id="methode" class="block method">
-      <header class="block__head">
-        <span class="eyebrow">Methode</span>
-        <h2>Modellprädiktive Regelung, Schritt für Schritt.</h2>
-      </header>
-      <ol class="method__steps">
-        <li>
-          <h3>PV-Produktion</h3>
-          <p>
-            <a href="https://re.jrc.ec.europa.eu/pvg_tools/" target="_blank" rel="noopener noreferrer">PVGIS</a>
-            liefert stündliche Zeitreihen 2020–2023 für Ihren Standort und Ihre Ausrichtung. Daraus
-            lernt ein Gradient-Boosting-Modell, wie Einstrahlung, Sonnenstand und Temperatur in
-            Leistung umgesetzt werden.
-          </p>
-        </li>
-        <li>
-          <h3>Wetter von MeteoSwiss</h3>
-          <p>
-            Die Modelle ICON-CH1 und ICON-CH2 von
-            <a href="https://opendatadocs.meteoswiss.ch" target="_blank" rel="noopener noreferrer">MeteoSwiss</a>
-            liefern Einstrahlung und Temperatur, das PV-Modell daraus die Produktion. Im Backtest wird mit
-            Messungen der nächsten SwissMetNet-Station abgerechnet.
-          </p>
-        </li>
-        <li>
-          <h3>Statistische Prognosen</h3>
-          <p>
-            Verbrauch: Standardlastprofil (H0) mit Saisonfaktor. Preise: publizierte EKZ-Tarife
-            (bis 18 Uhr für den Folgetag), danach das Mittel derselben Viertelstunde der letzten 14 Tage,
-            getrennt nach Werktag und Wochenende.
-          </p>
-        </li>
-        <li>
-          <h3>MPC als MILP</h3>
-          <p>
-            Alle 15 Minuten wird über 24 Stunden optimiert – minimiert werden Bezugskosten minus
-            Einspeiseerlös (plus Verschleiss), unter Batteriemodell, Leistungsgrenzen, Netzanschluss
-            und einer Binärvariable gegen gleichzeitiges Laden und Entladen. Umgesetzt wird nur der erste
-            Schritt, dann wird mit neuem Ladestand neu gerechnet.
-          </p>
-        </li>
-      </ol>
-      <p class="method__ref">
-        Aufbau nach Abschnitt 3.5 in Ruddick et al. (2024):
-        <a href="https://www.sciencedirect.com/science/article/pii/S2666546824001149" target="_blank" rel="noopener noreferrer">
-          Real-world validation of safe reinforcement learning, model predictive control and decision
-          tree-based home energy management systems</a>, Energy and AI
-        (<a href="https://arxiv.org/abs/2408.07435" target="_blank" rel="noopener noreferrer">arXiv</a>).
-        Abweichend vom Paper nutzt die PV-Prognose Wetterdaten, und es gibt keinen EV-Ladepunkt.
-      </p>
-    </section>
   </main>
 </div>

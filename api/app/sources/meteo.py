@@ -108,3 +108,57 @@ def backtest(lat: float, lon: float, past_days: int) -> tuple[pd.DataFrame, dict
     out["ghi"] = measured["ghi"].reindex(out.index).fillna(df["shortwave_radiation"])
     out["temp"] = measured["temp"].reindex(out.index).fillna(df["temperature_2m"])
     return out.dropna(), station
+
+
+# Gitter über die Schweiz für die Wetterkarte (ICON-CH2 deckt den ganzen Alpenraum ab)
+GRID_LAT = (45.75, 47.85)
+GRID_LON = (5.85, 10.55)
+GRID_STEP = 0.15
+
+
+def weather_grid(hours_back: int = 6, hours_ahead: int = 48) -> dict:
+    """Bewölkung (%), Niederschlag (mm/h) und Globalstrahlung (W/m²) als Gitter je Stunde.
+
+    Eine Anfrage mit allen Gitterpunkten (Open-Meteo erlaubt Koordinatenlisten), 30 min gecacht.
+    """
+    n_lat = round((GRID_LAT[1] - GRID_LAT[0]) / GRID_STEP) + 1
+    n_lon = round((GRID_LON[1] - GRID_LON[0]) / GRID_STEP) + 1
+    lats = [round(GRID_LAT[0] + i * GRID_STEP, 3) for i in range(n_lat)]
+    lons = [round(GRID_LON[0] + j * GRID_STEP, 3) for j in range(n_lon)]
+    data = get_json(
+        FORECAST,
+        {"latitude": ",".join(str(a) for a in lats for _ in lons),
+         "longitude": ",".join(str(b) for _ in lats for b in lons),
+         "hourly": "cloud_cover,precipitation,shortwave_radiation",
+         "models": MODELS[1], "past_days": 1, "forecast_days": 3, "timezone": "GMT"},
+        ttl=1800,
+    )
+    times = pd.to_datetime(data[0]["hourly"]["time"], utc=True)
+    now = pd.Timestamp.now(tz="UTC").floor("h")
+    keep = [i for i, t in enumerate(times)
+            if now - pd.Timedelta(hours=hours_back) <= t <= now + pd.Timedelta(hours=hours_ahead)]
+
+    def field(name: str, digits: int) -> list:
+        # [Zeit][Breitengrad][Längengrad], Breitengrade von Süd nach Nord
+        out = []
+        for i in keep:
+            frame = []
+            for a in range(n_lat):
+                row = []
+                for b in range(n_lon):
+                    v = data[a * n_lon + b]["hourly"][name][i]
+                    row.append(None if v is None else round(v, digits) if digits else round(v))
+                frame.append(row)
+            out.append(frame)
+        return out
+
+    return {
+        "lats": lats,
+        "lons": lons,
+        "times": [int(times[i].timestamp()) for i in keep],
+        "now": int(now.timestamp()),
+        "model": "MeteoSwiss ICON-CH2",
+        "cloud": field("cloud_cover", 0),
+        "precip": field("precipitation", 1),
+        "radiation": field("shortwave_radiation", 0),
+    }

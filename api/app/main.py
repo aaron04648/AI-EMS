@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Query
 
 from .control import simulate
 from .schemas import SimulationRequest
-from .sources import geo
+from .sources import geo, meteo
 from .sources.http import SourceError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -38,6 +38,14 @@ def geocode(q: str = Query(..., min_length=2, max_length=80)) -> list[dict]:
         return geo.search(q)
     except SourceError as err:
         raise HTTPException(502, f"Ortssuche nicht erreichbar: {err}") from err
+
+
+@app.get("/weather-map")
+def weather_map() -> dict:
+    try:
+        return meteo.weather_grid()
+    except SourceError as err:
+        raise HTTPException(502, f"Wetterdaten nicht erreichbar: {err}") from err
 
 
 @app.post("/simulate")

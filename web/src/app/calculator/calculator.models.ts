@@ -52,7 +52,15 @@ export interface SimulationResult {
     price_export: number[];
     no_pv_cost_chf: number;
     pv_forecast_mae_kw: number;
+    estimated_prices: number;
     strategies: Record<StrategyKey, StrategyResult>;
+  };
+  /** Publizierte Tarife der letzten 14 Tage bis Ende der Publikation (Rp./kWh, 15 min) */
+  tariffs: {
+    start: number;
+    step: number;
+    import: (number | null)[];
+    export: (number | null)[];
   };
   plan: {
     start: number;

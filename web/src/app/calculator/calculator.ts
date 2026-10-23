@@ -3,11 +3,15 @@ import { RouterLink } from '@angular/router';
 import { fmt, formatDay, formatDayTime, formatTime } from '../core/series';
 import { BarChart, BarRow } from '../shared/charts/bar-chart';
 import { Band, ChartSeries, LineChart } from '../shared/charts/line-chart';
+import { Help } from '../shared/help';
 import { Logo } from '../shared/logo';
+import { ThemeToggle } from '../shared/theme-toggle';
+import { ACTIONS, ACTION_KEYS, Action, SLOT, actionAt } from './actions';
 import { Place, SimulationRequest, SimulationResult, StrategyKey } from './calculator.models';
+import { TariffBoard } from './tariff-board';
+import { WeatherMap } from './weather-map';
 
-/** Kategoriale Farben in fester Reihenfolge (validierte Dataviz-Palette) */
-const SLOT = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
+export type View = 'meteo' | 'boerse' | 'statistik';
 
 /** Formularwerte in Anzeige-Einheiten (Prozent statt Anteil) */
 interface Form {
@@ -71,19 +75,10 @@ const STRATEGIES: { key: StrategyKey; label: string; note: string }[] = [
   { key: 'optimal', label: 'Optimum', note: 'theoretisch, perfekte Voraussicht' },
 ];
 
-/** Aktionen im Fahrplan – Farbe folgt der Aktion, nie dem Rang */
-const ACTIONS = {
-  gridCharge: { label: 'Aus dem Netz laden (kaufen)', color: SLOT[0] },
-  solarCharge: { label: 'Mit Solarstrom laden', color: SLOT[3] },
-  supply: { label: 'Batterie versorgt das Haus', color: SLOT[2] },
-  sell: { label: 'Batterie verkauft ins Netz', color: SLOT[1] },
-  idle: { label: 'Batterie ruht', color: '#d2d2d7' },
-} as const;
-type Action = keyof typeof ACTIONS;
 
 @Component({
   selector: 'app-calculator',
-  imports: [RouterLink, Logo, LineChart, BarChart],
+  imports: [RouterLink, Logo, Help, ThemeToggle, LineChart, BarChart, WeatherMap, TariffBoard],
   templateUrl: './calculator.html',
   styleUrl: './calculator.scss',
 })
@@ -92,7 +87,13 @@ export class Calculator implements OnDestroy {
   protected readonly orientations = ORIENTATIONS;
   protected readonly strategies = STRATEGIES;
   protected readonly actions = ACTIONS;
-  protected readonly actionKeys = Object.keys(ACTIONS) as Action[];
+  protected readonly actionKeys = ACTION_KEYS;
+  protected readonly view = signal<View>('meteo');
+  protected readonly views: { key: View; label: string }[] = [
+    { key: 'meteo', label: 'Meteo' },
+    { key: 'boerse', label: 'Börse' },
+    { key: 'statistik', label: 'Statistik' },
+  ];
   protected readonly formatDay = formatDay;
   protected readonly formatDayTime = formatDayTime;
   protected readonly formatTime = formatTime;
@@ -245,15 +246,7 @@ export class Calculator implements OnDestroy {
     const p = r.plan;
     const x = p.pv.map((_, i) => p.start + i * p.step);
 
-    const action = (i: number): Action => {
-      if (p.charge[i] > 0.05) {
-        return p.grid_import[i] > 0.05 && p.charge[i] > p.pv[i] - p.load[i] + 0.05 ? 'gridCharge' : 'solarCharge';
-      }
-      if (p.discharge[i] > 0.05) {
-        return p.grid_export[i] > 0.05 && p.discharge[i] > p.load[i] - p.pv[i] + 0.05 ? 'sell' : 'supply';
-      }
-      return 'idle';
-    };
+    const action = (i: number): Action => actionAt(p, i);
 
     // zusammenhängende Blöcke gleicher Aktion
     const blocks: { action: Action; from: number; to: number; priceSum: number; energy: number; n: number }[] = [];
@@ -372,4 +365,13 @@ export class Calculator implements OnDestroy {
   }
 
   protected readonly hourTick = (t: number) => formatTime(t);
+  /** Achsenbeschriftung über mehrere Tage: „Fr 12:00“ */
+  protected readonly dayHourTick = (t: number) =>
+    new Date(t * 1000).toLocaleString('de-CH', { timeZone: 'Europe/Zurich', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+  /** PV-Prognose des Fahrplans für die Wetterkarte */
+  protected readonly pvSeries = computed(() => {
+    const r = this.result();
+    return r ? { start: r.plan.start, step: r.plan.step, values: r.plan.pv } : null;
+  });
 }

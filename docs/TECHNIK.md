@@ -11,7 +11,7 @@ Regelung (MPC)**, wann eine Heimbatterie lädt, entlädt, Strom kauft oder verka
 |---|---|
 | `/` Übersicht | Landing Page mit aktuellem EKZ-Preis, Tagesverlauf, Preistreibern und Europa-Teaser |
 | `/analyse` | Schweiz: Monatsmittel, Tagesprofil, Erzeugungsmix, Korrelationen · Europa: 14 Gebotszonen · EKZ vs. Börse · Fazit |
-| `/rechner` | Eigene App im neuen Tab: Sidebar mit Inputs (Standort, PV, Batterie, Haushalt, Tarif, Netz) → Fahrplan ab jetzt + Backtest der letzten Tage |
+| `/rechner` | Eigene App im neuen Tab. Links eine Sidebar mit den Inputs (Standort, PV, Batterie, Haushalt, Tarif, Netz), rechts drei Ansichten: **Meteo** (Wetterkarte ICON-CH2 mit Zeit-Slider: Wolken, Sonne, Niederschlag), **Börse** (96 Viertelstunden-Tarife pro Tag mit Tages-Slider und MPC-Aktionen), **Statistik** (Grafikblatt: Ladeplan, Backtest, PV-Modell). Erklärungen gibt es nur über **?**-Buttons. |
 
 ### Rechner: PV-Prognose + MPC
 
@@ -45,7 +45,13 @@ Abweichungen vom Paper:
 - **Frontend:** Angular 20 (Standalone, zoneless, Signals), SCSS. Das Design-System (Apple-Stil) stammt aus den
   Projekten *company-homepage*, *atelier-ritzo-homepage* und *munizipal*. Die Charts sind eigene SVG-Komponenten ohne Chart-Bibliothek.
 - **Backend:** Python 3.12, FastAPI, NumPy/pandas, scikit-learn (PV-Modell), SciPy/HiGHS (MILP).
-  Endpunkte: `POST /api/simulate`, `GET /api/geocode?q=` (swisstopo), `GET /api/health`.
+  Endpunkte: `POST /api/simulate`, `GET /api/weather-map` (Gitter 0.15° über die Schweiz, 30 min gecacht),
+  `GET /api/geocode?q=` (swisstopo), `GET /api/health`.
+- **Hell/Dunkel:** Alle Farben sind CSS-Variablen (`styles.scss`, `:root` und `[data-theme='dark']`), die Charts
+  nutzen je Modus eigene Stufen der Dataviz-Palette. Der Umschalter merkt sich die Wahl, sonst gilt die
+  Systemeinstellung.
+- **Karte:** Leaflet mit der grauen Landeskarte von swisstopo (WMTS). Das Wetter-Overlay wird im Browser als Canvas
+  aus dem Gitter interpoliert.
 - **Daten:** `fetcher/fetch-data.mjs` (Node, ohne Abhängigkeiten) holt die Daten und legt sie als JSON-Snapshots in `data/` ab:
   - `api.energy-charts.info`: Day-Ahead-Preise (`/price`) und Erzeugung (`/public_power`), CC BY 4.0
   - `api.tariffs.ekz.ch`: `integrated_400D` (Dynamisch), `integrated_400ST` (Standard), `electricity_dynamic`

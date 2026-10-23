@@ -1,0 +1,154 @@
+@if (day(); as d) {
+  @if (ticker(); as t) {
+    <!-- ---------- Ticker ---------- -->
+    <header class="ticker">
+      <div class="ticker__symbol">
+        <span class="ticker__code">EKZ·DYN</span>
+        <span class="ticker__name">{{ d.label }}</span>
+      </div>
+      <div class="ticker__price">
+        <span class="ticker__value">{{ fmt(t.price, 2) }}</span>
+        <span class="ticker__unit">Rp./kWh</span>
+        @if (t.change !== null) {
+          <span class="ticker__change" [style.color]="t.change > 0 ? red : green">
+            {{ t.change > 0 ? '▲' : '▼' }} {{ fmt(t.change > 0 ? t.change : -t.change, 2) }}
+            ({{ t.changePct! > 0 ? '+' : '' }}{{ fmt(t.changePct, 1) }} %)
+          </span>
+        }
+        <app-help align="right">
+          Bezugstarif EKZ Energie Dynamisch inkl. Netznutzung (400D) und Abgaben, publiziert bis 18 Uhr für den
+          Folgetag. ▲▼ = Tagesdurchschnitt gegenüber dem Vortag.
+        </app-help>
+      </div>
+      <span class="ticker__when">{{ t.priceLabel }}</span>
+    </header>
+
+    <dl class="stats-row">
+      <div><dt>Eröffnung</dt><dd>{{ fmt(t.open, 2) }}</dd></div>
+      <div><dt>Hoch</dt><dd [style.color]="red">{{ fmt(t.high.v, 2) }} <small>{{ hhmm(t.high.t) }}</small></dd></div>
+      <div><dt>Tief</dt><dd [style.color]="green">{{ fmt(t.low.v, 2) }} <small>{{ hhmm(t.low.t) }}</small></dd></div>
+      <div><dt>Ø Tag</dt><dd>{{ fmt(t.avg, 2) }}</dd></div>
+      <div><dt>Spanne</dt><dd>{{ fmt(t.spread, 2) }}</dd></div>
+    </dl>
+  }
+
+  <!-- ---------- Steuerung ---------- -->
+  <div class="board__controls">
+    <div class="pills" role="group" aria-label="Darstellung">
+      <button type="button" [class.is-active]="mode() === 'line'" (click)="mode.set('line')">Linie</button>
+      <button type="button" [class.is-active]="mode() === 'candles'" (click)="mode.set('candles')">Kerzen</button>
+    </div>
+    <label class="check">
+      <input type="checkbox" [checked]="showExport()" (change)="showExport.set(!showExport())" />
+      Einspeisung
+    </label>
+    <app-help align="right">
+      Linie: alle 96 Viertelstunden, grün unter und rot über dem Tagesdurchschnitt (gestrichelt).
+      Kerzen: je Stunde Eröffnung, Hoch, Tief und Schluss – grün, wenn der Preis innerhalb der Stunde steigt.
+    </app-help>
+  </div>
+
+  <!-- ---------- Chart ---------- -->
+  <div class="board__chart">
+    <svg
+      [attr.viewBox]="'0 0 ' + width() + ' ' + height"
+      [attr.height]="height"
+      role="img"
+      [attr.aria-label]="'Viertelstunden-Tarife ' + d.label"
+      (pointermove)="onMove($event)"
+      (pointerleave)="hover.set(null)"
+    >
+      @for (tk of yTicks(); track tk.v) {
+        <line class="grid" [attr.x1]="pad.left" [attr.x2]="width() - pad.right" [attr.y1]="tk.y" [attr.y2]="tk.y" />
+        <text class="tick tick--y" [attr.x]="pad.left - 8" [attr.y]="tk.y">{{ fmt(tk.v, 1) }}</text>
+      }
+      @for (tk of xTicks(); track tk.label) {
+        <text class="tick tick--x" [attr.x]="tk.x" [attr.y]="height - 6">{{ tk.label }}</text>
+      }
+
+      @if (ticker(); as t) {
+        <line class="avg" [attr.x1]="pad.left" [attr.x2]="width() - pad.right" [attr.y1]="y(t.avg)" [attr.y2]="y(t.avg)" />
+      }
+
+      @if (mode() === 'line') {
+        <path class="area" [attr.d]="area()" />
+        @for (s of segments(); track s.x1) {
+          <line class="seg" [attr.x1]="s.x1" [attr.x2]="s.x2" [attr.y1]="s.y" [attr.y2]="s.y" [style.stroke]="s.color" />
+          @if (s.next !== null) {
+            <line class="seg seg--v" [attr.x1]="s.x2" [attr.x2]="s.x2" [attr.y1]="s.y" [attr.y2]="s.next" />
+          }
+        }
+      } @else {
+        @for (c of candles(); track c.cx) {
+          <line class="wick" [attr.x1]="c.cx" [attr.x2]="c.cx" [attr.y1]="c.high" [attr.y2]="c.low" [style.stroke]="c.color" />
+          <rect
+            class="body"
+            [attr.x]="c.cx - c.w / 2"
+            [attr.y]="c.top"
+            [attr.width]="c.w"
+            [attr.height]="c.bottom - c.top < 1.5 ? 1.5 : c.bottom - c.top"
+            [style.fill]="c.color"
+          />
+        }
+      }
+
+      @if (exportLine()) {
+        <path class="export" [attr.d]="exportLine()" />
+      }
+
+      @if (nowX(); as nx) {
+        <line class="now" [attr.x1]="nx" [attr.x2]="nx" [attr.y1]="pad.top" [attr.y2]="height - pad.bottom" />
+        <text class="now__label" [attr.x]="nx + 4" [attr.y]="pad.top + 10">jetzt</text>
+      }
+
+      @if (hoverInfo(); as h) {
+        <line class="crosshair" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="pad.top" [attr.y2]="height - pad.bottom" />
+        <circle class="dot" [attr.cx]="h.x" [attr.cy]="h.y" r="4" />
+      }
+    </svg>
+
+    @if (hoverInfo(); as h) {
+      <div class="tip" [style.left.px]="h.x" [class.tip--left]="h.x > width() * 0.65">
+        <strong>{{ h.time }}</strong>
+        <span>{{ fmt(h.price, 2) }} Rp./kWh <em [style.color]="h.diff > 0 ? red : green">{{ h.diff > 0 ? '+' : '' }}{{ fmt(h.diff, 1) }} % ggü. Ø</em></span>
+        @if (h.exp !== null && showExport()) {
+          <span>Einspeisung {{ fmt(h.exp, 2) }} Rp./kWh</span>
+        }
+        @if (h.action) {
+          <span class="tip__action"><i [style.background]="actions[h.action].color"></i>{{ actions[h.action].label }}</span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ---------- MPC-Aktionen ---------- -->
+  @if (ticker()?.hasPlan) {
+    <div class="strip" [style.padding-left.px]="pad.left" [style.padding-right.px]="pad.right">
+      @for (q of d.quarters; track q.t) {
+        <span [style.background]="q.action ? actions[q.action].color : 'transparent'" [attr.title]="q.action ? hhmm(q.t) + ' ' + actions[q.action].label : null"></span>
+      }
+    </div>
+    <ul class="strip__legend">
+      @for (k of actionKeys; track k) {
+        <li><i [style.background]="actions[k].color"></i>{{ actions[k].label }}</li>
+      }
+      <app-help align="right">Fahrplan der MPC für diesen Tag: was die Batterie in jeder Viertelstunde tut.</app-help>
+    </ul>
+  }
+
+  <!-- ---------- Tages-Slider ---------- -->
+  <div class="days">
+    <button type="button" class="days__step" aria-label="Vorheriger Tag" [disabled]="index() === 0" (click)="step(-1)">‹</button>
+    <div class="days__track">
+      <input type="range" min="0" [max]="days().length - 1" step="1" [value]="index()" aria-label="Tag wählen" (input)="pick($event)" />
+      <div class="days__labels">
+        @for (day of days(); track day.key; let i = $index) {
+          <span [class.is-active]="i === index()">{{ day.short }}</span>
+        }
+      </div>
+    </div>
+    <button type="button" class="days__step" aria-label="Nächster Tag" [disabled]="index() === days().length - 1" (click)="step(1)">›</button>
+  </div>
+} @else {
+  <p class="empty">Keine publizierten Tarife verfügbar.</p>
+}
