@@ -1,191 +1,269 @@
 @use 'tokens' as *;
 
-.intro {
-  padding-block: calc(#{$header-height} + #{$spacing-10}) $spacing-9;
-  text-align: center;
+// Zusätzliche Treiberfarben (Slots 6–8 der validierten Palette), je Modus eigene Stufen
+:host {
+  display: block;
+  --s6: #008300;
+  --s7: #6250d6;
+  --s8: #e34948;
+  --forecast-band: rgba(42, 120, 214, 0.07);
+}
 
-  .lead {
-    margin-top: $spacing-5;
+:host-context([data-theme='dark']) {
+  --s7: #9085e9;
+  --s8: #e66767;
+  --forecast-band: rgba(57, 135, 229, 0.12);
+}
+
+// ---------- Ein Bildschirm: links Kennzahlen + Grafik, rechts die Viertelstunden-Liste ----------
+.dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: $spacing-4;
+  height: 100vh;
+  height: 100dvh;
+  padding: calc(#{$header-height} + #{$spacing-4}) $spacing-5 $spacing-5;
+  background: $color-offwhite;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
   }
 }
 
-.jump {
+.dash__main {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: $spacing-3;
+  min-width: 0;
+  min-height: 0;
+}
+
+.panel {
+  border-radius: $radius-md;
+  background: $surface-raised;
+  box-shadow: $shadow-card;
+}
+
+// ---------- Kennzahlen-Leiste ----------
+.kpis {
+  @extend .panel;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  padding: $spacing-3 $spacing-5;
+
+  & + & {
+    border-left: 1px solid $color-gray-100;
+  }
+}
+
+.kpi__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $color-offwhite;
+  font-size: $text-lg;
+  font-weight: $font-weight-bold;
+  color: $color-ink;
+
+  .kpi--low & {
+    color: var(--down);
+  }
+
+  .kpi--high & {
+    color: var(--up);
+  }
+}
+
+.kpi__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kpi__label {
+  font-size: $text-xs;
+  color: $color-gray-500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi__value {
+  font-size: $text-2xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: $line-height-snug;
+  font-variant-numeric: tabular-nums;
+
+  small {
+    margin-left: $spacing-1;
+    font-size: $text-xs;
+    font-weight: $font-weight-medium;
+    color: $color-gray-500;
+  }
+}
+
+// ---------- Bubble-Buttons ----------
+.toolbar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-2 $spacing-4;
+}
+
+.pills {
+  display: flex;
   gap: $spacing-2;
-  margin-top: $spacing-7;
+}
 
-  a {
-    padding: $spacing-2 $spacing-4;
-    border-radius: $radius-full;
+.pill {
+  padding: 6px $spacing-4;
+  border: 1px solid $color-gray-200;
+  border-radius: $radius-full;
+  background: $surface-raised;
+  color: $color-ink;
+  font: inherit;
+  font-size: $text-sm;
+  cursor: pointer;
+  transition: background-color $transition-base, color $transition-base, border-color $transition-base;
+
+  &:hover {
+    border-color: $color-gray-400;
+  }
+
+  &.is-active {
+    border-color: $color-accent;
+    background: $color-accent;
+    color: $color-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.meta {
+  font-size: $text-xs;
+  color: $color-gray-500;
+  font-variant-numeric: tabular-nums;
+}
+
+// ---------- Grafikfläche (füllt den Rest) ----------
+.stage {
+  @extend .panel;
+  min-height: 0;
+  padding: $spacing-4 $spacing-4 $spacing-2;
+  overflow: hidden;
+
+  @media (max-width: $bp-md) {
+    height: 60vh;
+  }
+
+  ::ng-deep .chart {
+    margin-top: 0;
+  }
+}
+
+// ---------- Liste rechts ----------
+.dash__list {
+  @extend .panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (max-width: $bp-md) {
+    max-height: 70vh;
+  }
+}
+
+.list__head {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-3 $spacing-4;
+  border-bottom: 1px solid $color-gray-100;
+  font-size: $text-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding: $spacing-1 0 $spacing-3;
+  font-size: $text-sm;
+  font-variant-numeric: tabular-nums;
+}
+
+.list__day {
+  position: sticky;
+  top: 0;
+  padding: $spacing-2 $spacing-4 $spacing-1;
+  background: $surface-raised;
+  font-size: $text-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-500;
+}
+
+.list__row {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) 3.6rem;
+  align-items: center;
+  gap: $spacing-3;
+  padding: 3px $spacing-4;
+
+  &.is-low,
+  &.is-high {
+    font-weight: $font-weight-semibold;
     background: $color-offwhite;
-    color: $color-ink;
-    font-size: $text-sm;
-    transition: background-color $transition-base;
+  }
+}
 
-    &:hover {
-      background: $color-gray-100;
-      text-decoration: none;
+.list__time {
+  color: $color-gray-500;
+}
+
+.list__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: $color-gray-100;
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--bar);
+
+    .is-low & {
+      background: var(--down);
+    }
+
+    .is-high & {
+      background: var(--up);
     }
   }
 }
 
-.chart-grid--spaced {
-  margin-top: $spacing-6;
+.list__value {
+  text-align: right;
 }
 
-.chart-grid,
-.chart-card {
-  margin-bottom: $spacing-6;
-}
-
-// ---------- Erzeugungsmix ----------
-.mix__sub {
-  margin-top: $spacing-6;
-  padding-top: $spacing-5;
-  border-top: 1px solid $color-gray-100;
-
-  h4 {
-    font-size: $text-sm;
-    font-weight: $font-weight-medium;
-    color: $color-gray-500;
-  }
-
-  ::ng-deep .chart {
-    margin-top: $spacing-3;
-  }
-}
-
-.mix__table {
-  width: 100%;
-  margin-top: $spacing-6;
-  border-collapse: collapse;
-  font-size: $text-sm;
-  font-variant-numeric: tabular-nums;
-
-  th,
-  td {
-    padding: $spacing-2 $spacing-3;
-    border-bottom: 1px solid $color-gray-100;
-    text-align: right;
-  }
-
-  th:first-child {
-    text-align: left;
-    font-weight: $font-weight-regular;
-  }
-
-  thead th {
-    font-size: $text-xs;
-    font-weight: $font-weight-semibold;
-    color: $color-gray-400;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-}
-
-.swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: $spacing-2;
-  border-radius: 3px;
-  vertical-align: baseline;
-}
-
-// ---------- Erkenntnis-Karte ----------
-.insight {
-  display: flex;
-  flex-direction: column;
-}
-
-.insight__pair {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: $spacing-4;
-  margin-block: $spacing-6;
-
-  > div {
-    padding: $spacing-5;
-    border-radius: $radius-md;
-    background: $color-offwhite;
-  }
-}
-
-.insight__label {
-  display: block;
-  font-size: $text-xs;
-  color: $color-gray-500;
-}
-
-.insight__value {
-  display: block;
-  margin-top: $spacing-2;
-  font-size: $text-4xl;
-  font-weight: $font-weight-bold;
-  letter-spacing: $letter-spacing-tight;
-  line-height: 1;
-
-  small {
-    margin-left: $spacing-1;
-    font-size: $text-sm;
-    font-weight: $font-weight-medium;
-    color: $color-gray-500;
-  }
-}
-
-// ---------- Fazit ----------
-.verdict {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $spacing-6;
-
-  @media (min-width: $bp-md) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.verdict__col {
-  padding: $spacing-7 $spacing-6;
-  border-radius: $radius-lg;
-  background: #161617;
-
-  h3 {
-    display: flex;
-    align-items: center;
-    gap: $spacing-3;
-    font-size: $text-2xl;
-    margin-bottom: $spacing-3;
-  }
-
-  .prose {
-    color: $color-gray-400;
-    line-height: $line-height-loose;
-  }
-}
-
-.verdict__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: $text-lg;
-}
-
-.verdict__icon--down {
-  background: rgba(52, 199, 89, 0.18);
-  color: #34c759;
-}
-
-.verdict__icon--up {
-  background: rgba(255, 159, 10, 0.18);
-  color: #ff9f0a;
-}
-
-.verdict__cta {
-  margin-top: $spacing-8;
-  text-align: center;
+.state {
+  grid-column: 1 / -1;
 }

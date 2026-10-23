@@ -1,0 +1,73 @@
+:host {
+  margin-top: 0;
+}
+
+.legend {
+  margin-bottom: 8px;
+}
+
+.legend__swatch--thin {
+  height: 2px;
+  opacity: 0.55;
+}
+
+.future {
+  fill: var(--forecast-band);
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.line--actual {
+  stroke: var(--ink);
+}
+
+.line--forecast {
+  stroke: var(--s1);
+}
+
+.line--compare {
+  stroke: var(--s1);
+  stroke-width: 1.25;
+  opacity: 0.55;
+}
+
+.cut {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.cut-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cut-label--end {
+  fill: var(--muted);
+  text-anchor: end;
+  font-weight: 500;
+}
+
+.crosshair {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.dot {
+  stroke: var(--surface-raised);
+  stroke-width: 2;
+}
+
+.dot--actual {
+  fill: var(--ink);
+}
+
+.dot--forecast,
+.dot--compare {
+  fill: var(--s1);
+}

@@ -1,0 +1,17 @@
+.hit {
+  fill: transparent;
+}
+
+.seg {
+  transition: opacity 0.15s ease;
+
+  &.is-dim {
+    opacity: 0.35;
+  }
+}
+
+.tooltip__sum {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+}
