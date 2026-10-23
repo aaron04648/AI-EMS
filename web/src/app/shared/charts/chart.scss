@@ -3,12 +3,6 @@
 // Chart-Chrome nach der Dataviz-Referenz: Haarlinien, ruhige Achsen,
 // Text in Text-Farben – nur die Daten tragen Farbe.
 :host {
-  --chart-grid: #e8e8ed;
-  --chart-axis: #d2d2d7;
-  --chart-muted: #86868b;
-  --chart-surface: #ffffff;
-  --chart-band: rgba(27, 175, 122, 0.12);
-
   display: block;
   position: relative;
   min-width: 0;
@@ -108,7 +102,7 @@
 }
 
 .dot {
-  stroke: var(--chart-surface);
+  stroke: var(--surface-raised);
   stroke-width: 2;
 }
 
@@ -123,7 +117,7 @@
   min-width: 180px;
   padding: $spacing-3 $spacing-4;
   border-radius: $radius-sm;
-  background: rgba(255, 255, 255, 0.96);
+  background: $glass-strong;
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
   transform: translateX(14px);

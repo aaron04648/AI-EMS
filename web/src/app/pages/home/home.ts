@@ -7,8 +7,8 @@ import { fmt, formatDayTime, formatTime, localParts, mean, points, valueAt } fro
 import { LineChart } from '../../shared/charts/line-chart';
 import { RevealDirective } from '../../shared/reveal.directive';
 
-const COLOR_DYNAMIC = '#2a78d6';
-const COLOR_STANDARD = '#eb6834';
+const COLOR_DYNAMIC = 'var(--s1)';
+const COLOR_STANDARD = 'var(--s2)';
 
 @Component({
   selector: 'app-home',

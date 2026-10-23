@@ -136,7 +136,9 @@
             <span class="stat__value">{{ fmt(z.avg, 0) }}<span class="stat__unit">€/MWh</span></span>
           </div>
         } @empty {
-          <p class="state">Europa-Daten werden geladen …</p>
+          <p class="state">
+            {{ data.euPrices.isLoading() ? 'Europa-Daten werden geladen …' : 'Europa-Daten sind derzeit nicht verfügbar.' }}
+          </p>
         }
       </div>
     </div>

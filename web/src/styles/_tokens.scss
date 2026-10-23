@@ -4,17 +4,24 @@
 // =============================================================
 
 // ---------- Farben ----------
-$color-black:        #000000;   // Tiefschwarz (Hero-/Kontrast-Sections)
-$color-ink:          #1d1d1f;   // Primärer Text (Apple-Anthrazit)
-$color-white:        #ffffff;   // Reines Weiss
-$color-offwhite:     #f5f5f7;   // Heller Section-Hintergrund
-$color-gray-100:     #e8e8ed;   // Dezente Flächen
-$color-gray-200:     #d2d2d7;   // Rahmen / Linien
-$color-gray-400:     #86868b;   // Sekundärer Text
-$color-gray-500:     #6e6e73;   // Tertiärer Text
-$color-accent:       #0071e3;   // Subtile Akzentfarbe (Blau)
+// Feste Farben – unabhängig vom Theme (z. B. weisse Schrift auf Blau, Kontrast-Sections)
+$color-black:        #000000;
+$color-white:        #ffffff;
 $color-accent-hover: #0077ed;
 $color-accent-dark:  #2997ff;   // Akzent auf dunklem Grund
+
+// Theme-Farben – Werte für Hell/Dunkel stehen in styles.scss (:root / [data-theme='dark'])
+$color-ink:          var(--ink);         // Primärer Text
+$color-offwhite:     var(--surface-2);   // Section-Hintergrund
+$color-gray-100:     var(--line-soft);   // Dezente Flächen / Linien
+$color-gray-200:     var(--line);        // Rahmen
+$color-gray-400:     var(--muted-2);     // Sekundärer Text
+$color-gray-500:     var(--muted);       // Tertiärer Text
+$color-accent:       var(--accent);      // Akzentfarbe (Blau)
+$surface:            var(--surface);         // Seitenhintergrund
+$surface-raised:     var(--surface-raised);  // Karten, Eingabefelder
+$glass:              var(--glass);           // halbtransparente Leisten (Header)
+$glass-strong:       var(--glass-strong);    // Popover, Kartenlabels
 
 // ---------- Typografie ----------
 $font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
@@ -64,7 +71,7 @@ $radius-md:   1.125rem;   // Apple-Karten
 $radius-lg:   1.75rem;
 $radius-full: 980px;      // Pill-Buttons
 
-$shadow-card:  0 4px 24px rgba(0, 0, 0, 0.06);
+$shadow-card:  var(--shadow-card);
 $shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
 
 // ---------- Layout ----------

@@ -3,6 +3,70 @@
 // =============================================================
 @use 'tokens' as *;
 
+// ---------- Theme (Hell / Dunkel) ----------
+// Das Attribut data-theme setzt ein Inline-Skript in index.html vor dem Start der App
+// (gespeicherte Wahl oder Systemeinstellung); der ThemeToggle ändert es zur Laufzeit.
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-2: #f5f5f7;
+  --glass: rgba(251, 251, 253, 0.8);
+  --glass-strong: rgba(255, 255, 255, 0.94);
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --muted-2: #86868b;
+  --line: #d2d2d7;
+  --line-soft: #e8e8ed;
+  --accent: #0071e3;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+
+  // Charts – validierte Dataviz-Palette, je Modus eigene Stufen
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --bar: #86b6ef;
+  --bar-hl: #2a78d6;
+  --chart-grid: #e8e8ed;
+  --chart-axis: #d2d2d7;
+  --chart-muted: #86868b;
+  --chart-band: rgba(27, 175, 122, 0.12);
+  --up: #d03b3b;
+  --down: #0f9b68;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #000000;
+  --surface-raised: #1c1c1e;
+  --surface-2: #111113;
+  --glass: rgba(22, 22, 23, 0.8);
+  --glass-strong: rgba(36, 36, 38, 0.94);
+  --ink: #f5f5f7;
+  --muted: #a1a1a6;
+  --muted-2: #8e8e93;
+  --line: #3a3a3c;
+  --line-soft: #2c2c2e;
+  --accent: #2997ff;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --bar: #1c5cab;
+  --bar-hl: #5598e7;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #3a3a3c;
+  --chart-muted: #8e8e93;
+  --chart-band: rgba(25, 158, 112, 0.18);
+  --up: #e66767;
+  --down: #2fbf86;
+}
+
 // ---------- Reset ----------
 *,
 *::before,
@@ -30,7 +94,8 @@ body {
   line-height: $line-height-base;
   letter-spacing: $letter-spacing-base;
   color: $color-ink;
-  background: $color-white;
+  background: $surface;
+  transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -282,7 +347,7 @@ h4 {
 
 // ---------- Karten ----------
 .card {
-  background: $color-white;
+  background: $surface-raised;
   border-radius: $radius-md;
   padding: $spacing-6;
   box-shadow: $shadow-card;
@@ -308,11 +373,11 @@ h4 {
 .stat {
   padding: $spacing-6;
   border-radius: $radius-md;
-  background: $color-white;
+  background: $surface-raised;
   box-shadow: $shadow-card;
 
   .section--gray & {
-    background: $color-white;
+    background: $surface-raised;
   }
 
   .section--dark & {
@@ -359,7 +424,7 @@ h4 {
   min-width: 0;
   padding: $spacing-6 $spacing-5;
   border-radius: $radius-lg;
-  background: $color-white;
+  background: $surface-raised;
   box-shadow: $shadow-card;
 
   @media (min-width: $bp-md) {
@@ -438,7 +503,7 @@ select {
   padding: $spacing-3 $spacing-4;
   border-radius: $radius-sm;
   border: 1px solid $color-gray-200;
-  background: $color-white;
+  background: $surface-raised;
   font: inherit;
   color: inherit;
 
@@ -468,7 +533,7 @@ select {
     transition: background-color $transition-base, box-shadow $transition-base;
 
     &.is-active {
-      background: $color-white;
+      background: $surface-raised;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
       font-weight: $font-weight-semibold;
     }

@@ -94,16 +94,16 @@ function niceTicks(lo: number, hi: number, count = 5): number[] {
         <!-- Daten -->
         @for (p of paths(); track p.name) {
           @if (p.area) {
-            <path class="area" [attr.d]="p.area" [attr.fill]="p.color" [class.area--stacked]="stacked()" />
+            <path class="area" [attr.d]="p.area" [style.fill]="p.color" [class.area--stacked]="stacked()" />
           }
-          <path class="line" [attr.d]="p.line" [attr.stroke]="p.color" />
+          <path class="line" [attr.d]="p.line" [style.stroke]="p.color" />
         }
 
         <!-- Hover -->
         @if (hoverInfo(); as h) {
           <line class="crosshair" [attr.x1]="h.x" [attr.x2]="h.x" [attr.y1]="pad.top" [attr.y2]="pad.top + innerH()" />
           @for (d of h.dots; track d.name) {
-            <circle class="dot" [attr.cx]="h.x" [attr.cy]="d.y" r="4" [attr.fill]="d.color" />
+            <circle class="dot" [attr.cx]="h.x" [attr.cy]="d.y" r="4" [style.fill]="d.color" />
           }
         }
       </svg>
