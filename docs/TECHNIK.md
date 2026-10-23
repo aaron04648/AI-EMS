@@ -10,7 +10,7 @@ Regelung (MPC)**, wann eine Heimbatterie lädt, entlädt, Strom kauft oder verka
 | Seite | Inhalt |
 |---|---|
 | `/` Übersicht | Landing Page mit aktuellem EKZ-Preis, Tagesverlauf, Preistreibern und Europa-Teaser |
-| `/analyse` | Schweiz: Monatsmittel, Tagesprofil, Erzeugungsmix, Korrelationen · Europa: 14 Gebotszonen · EKZ vs. Börse · Fazit |
+| `/analyse` | Dashboard auf einem Bildschirm: Kennzahlen der nächsten 24 h, Ist-Preis bis jetzt und LightGBM-Prognose der nächsten 96 Viertelstunden (Ansichten 24 h, 7 Tage, Gründe), rechts die Viertelstunden-Liste. Daten aus `analysis/05_forecast.py` |
 | `/rechner` | Eigene App im neuen Tab. Links eine Sidebar mit den Inputs (Standort, PV, Batterie, Haushalt, Tarif, Netz), rechts drei Ansichten: **Meteo** (Wetterkarte ICON-CH2 mit Zeit-Slider: Wolken, Sonne, Niederschlag), **Börse** (96 Viertelstunden-Tarife pro Tag mit Tages-Slider und MPC-Aktionen), **Statistik** (Grafikblatt: Ladeplan, Backtest, PV-Modell). Erklärungen gibt es nur über **?**-Buttons. |
 
 ### Rechner: PV-Prognose + MPC
