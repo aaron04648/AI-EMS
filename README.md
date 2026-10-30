@@ -51,8 +51,8 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 | Data source | Description |
 |-------------|-------------|
-| [Energy-Charts – Stromproduktion Schweiz (Pronovo)](https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year) | Fraunhofer ISE. Nettostromerzeugung der Schweiz je Energieträger (Wasserkraft nach Kategorien, Kernenergie, Photovoltaik, Wind, Biomasse, Fossil), Pumpspeicher-Verbrauch, Last und grenzüberschreitender Handel; 15-min-Auflösung ab 2020 in MW. Datenquelle laut Energy-Charts: Pronovo, ENTSO-E, BFE (energetisch korrigiert, Publikation mit 1 Monat Verzögerung). Lizenz CC BY 4.0. |
-| [Energy-Charts – Börsenstrompreise und Handelsvolumen Schweiz](https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH&interval=year) | Fraunhofer ISE. Day-Ahead-Auktion Schweiz: Preis (EUR/MWh) und gehandeltes Volumen (MWh) ab 2014; stündlich, ab 01.10.2025 in 15 min. Datenquelle laut Energy-Charts: ENTSO-E, EPEX SPOT. Lizenz CC BY 4.0. |
+| [Energy-Charts – Stromproduktion Schweiz (Pronovo)](https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year) | Fraunhofer ISE. Net electricity generation in Switzerland by source (hydro by category, nuclear, PV, wind, biomass, fossil), pumped-storage consumption, load and cross-border trade; 15-minute resolution in MW from 2020. Underlying sources according to Energy-Charts: Pronovo, ENTSO-E, SFOE (energetically corrected, published with a one-month delay). License CC BY 4.0. |
+| [Energy-Charts – Börsenstrompreise und Handelsvolumen Schweiz](https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH&interval=year) | Fraunhofer ISE. Swiss day-ahead auction: price (EUR/MWh) and traded volume (MWh) from 2014, hourly (also after the EU switch to 15-minute products on 01.10.2025). Underlying sources according to Energy-Charts: ENTSO-E, EPEX SPOT. License CC BY 4.0. |
 
 
 ## Exploratory Data Analysis
@@ -63,17 +63,47 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 - Notebook to run the EDA: [01_data_understanding.ipynb](notebooks/01_data_understanding.ipynb)
 
+The notebook downloads exactly the data behind the two Energy-Charts views (cached in `data/raw/energy_charts_web/`, not versioned). Data retrieved on 30.10.2026.
+
 ### Data Quality
 
-*Short description of the results from the EDA with respect to data quality issues, such as coverage, data types, missing values, etc.*
+**Day-ahead price and volume (2015 – 30.10.2026)**
+- 103'704 hourly values, no gaps on the UTC time axis and no missing prices. All columns are numeric (`float64`).
+- The Swiss series on Energy-Charts stays **hourly** even after the EU day-ahead auction switched to 15-minute products (01.10.2025). A forecast for a 15-minute tariff (EKZ) therefore applies per hour.
+- Volume has exactly one missing value per year: 03:00 on the day of the switch to daylight saving time (an artefact of the source).
+- 2015–2017 the file also contains the *IT-North-CH* auction; it is dropped.
+- Extreme values are real market events, not errors (min −464 EUR/MWh in 2026, max 872 EUR/MWh in 2022), so they are kept.
+
+**Electricity production, Pronovo (2020 – 31.08.2026)**
+- 15-minute values without gaps, but published with a **one-month delay**. They can be used for analysis and training, not as a live input for the 24 h forecast.
+- The **schema changes over time**: in 2020 hydro power is only reported as one total, nuclear and pumped-storage consumption are missing until 30.09.2022, and the biomass and fossil categories are renamed twice. The data set is complete and comparable only from **01.10.2022** onwards (year-to-year comparisons from 2023).
+- **Load** is only hourly (every value repeated four times in the 15-minute grid), and so is most of the cross-border trade balance. Hydro, nuclear and pumped-storage values are genuine 15-minute values.
 
 ### Insights
 
-*List insights from the EDA with respect to the problem statement. Is the data suitable for reaching your goals?*
+1. **Structural breaks in the price level.** The annual mean was 34–52 EUR/MWh in 2015–2020, peaked at 282 EUR/MWh during the 2022 energy crisis (3'132 hours above 300 EUR/MWh) and is 131 EUR/MWh in 2026. A model must handle level shifts (e.g. predict the change versus the previous day instead of the absolute price), and 2021–2022 should not be used for training without care.
+2. **Volatility is increasing, which is good for an EMS.** Negative prices rose from 9 hours (2015) to about 300 hours per year (2024/2025). The mean daily spread (max − min) grew from about 22 EUR/MWh (2015–2020) to 110 EUR/MWh (2026). The larger the spread, the more load shifting and batteries can save (Goal 2).
+3. **Strong daily and seasonal pattern.** Over 2015–2026, working days show morning and evening peaks. On spring/summer weekends the median at 14:00 drops to 15–20 EUR/MWh and the 25th percentile is close to 0 (solar surplus). Without the crisis years 2022–2023 the shape stays the same, but the interquartile range becomes much narrower (winter: 75 → 46 EUR/MWh). Hour, weekday and season are therefore key features.
+4. **Switzerland imports in winter.** It exports up to 4 TWh per month in summer and imports up to 2 TWh per month in winter, so the Swiss price is closely tied to neighbouring markets.
+5. **Swiss production explains the price only partially.** The strongest Swiss driver is the residual load (load − PV − wind, Spearman ρ = 0.55); PV lowers the price (ρ = −0.29), and the midday price falls clearly with rising PV output. Pumped storage and reservoir hydro *react* to the price (pumping at low, generating at high prices) and are consequences rather than causes.
+6. **PV is growing fast.** Its share of Swiss production rose from 7 % (2023) to 13 % (2025) and 18 % (Jan–Aug 2026), so midday price dips and negative prices will become more frequent.
+7. **High autocorrelation, but naive forecasts are not enough.** The 24 h and 168 h lags correlate strongly with the price (r = 0.85 and 0.81 since 2024). Still, the naive same-hour-yesterday and same-hour-last-week forecasts only reach an nMAE of 13–21 % and 14–25 % per year. The goal nMAE < 10 % requires a model that reduces the persistence error by roughly 40 %.
+
+**Is the data suitable?** The price series is complete, long and clean and is well suited as the target variable. The Pronovo data explains the Swiss side (generation mix, seasonality, solar effect) but, due to its one-month delay, cannot serve as a live input. For the 24 h forecast it is therefore complemented with day-ahead forecasts of solar, wind and load and with neighbouring prices (DE, FR, IT-North, AT), which are loaded by [analysis/01_fetch_data.py](analysis/01_fetch_data.py).
 
 ### Visualizations
 
 The entire set of visualizations can be found in `figures/eda`.
+
+| Price | Production and drivers |
+|---|---|
+| ![Daily profiles with percentiles](figures/eda/03_tagesprofile_perzentile.png) | ![Monthly generation mix](figures/eda/08_strommix_monat.png) |
+| ![Daily profiles without 2022–2023](figures/eda/03b_tagesprofile_perzentile_ohne_2022_2023.png) | ![Drivers vs. price](figures/eda/11_scatter_treiber.png) |
+| ![Daily spread](figures/eda/05_tagesspanne.png) | ![Midday price vs. Swiss PV](figures/eda/12_solar_mittagspreis.png) |
+
+- `01`–`06`: price over time, distribution, daily profiles (median and P25–P75, with and without 2022–2023), hour × month heatmap, daily spread, volume
+- `07`–`09`: annual and monthly generation mix, daily generation profiles in summer and winter
+- `10`–`13`: correlations with the price, scatter plots of the drivers, midday price vs. PV, autocorrelation
 
 ---
 
