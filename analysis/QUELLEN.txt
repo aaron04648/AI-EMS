@@ -45,8 +45,12 @@ B) VISUELLE ANALYSE / REFERENZ-CHARTS (energy-charts.info, Fraunhofer ISE)
 [4] Stromproduktion und Börsenstrompreise Schweiz:
     https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH
     (dasselbe für Deutschland: https://www.energy-charts.info/charts/power/chart.htm?l=de&c=DE)
+    Jahresansicht mit Pronovo-Daten (Grundlage der EDA in notebooks/01_data_understanding.ipynb):
+    https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year
 [5] Börsenstrompreise & Handelsvolumen (Day-Ahead 15 min / 60 min):
     https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH
+    Jahresansicht (Grundlage der EDA in notebooks/01_data_understanding.ipynb):
+    https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH&interval=year
     Grenzüberschreitender Stromhandel Schweiz:
     https://www.energy-charts.info/charts/import_export/chart.htm?l=de&c=CH
     Erneuerbarer Anteil an der Last:

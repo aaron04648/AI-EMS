@@ -51,8 +51,8 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 | Data source | Description |
 |-------------|-------------|
-|             |             |
-|             |             |
+| [Energy-Charts – Stromproduktion Schweiz (Pronovo)](https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year) | Fraunhofer ISE. Nettostromerzeugung der Schweiz je Energieträger (Wasserkraft nach Kategorien, Kernenergie, Photovoltaik, Wind, Biomasse, Fossil), Pumpspeicher-Verbrauch, Last und grenzüberschreitender Handel; 15-min-Auflösung ab 2020 in MW. Datenquelle laut Energy-Charts: Pronovo, ENTSO-E, BFE (energetisch korrigiert, Publikation mit 1 Monat Verzögerung). Lizenz CC BY 4.0. |
+| [Energy-Charts – Börsenstrompreise und Handelsvolumen Schweiz](https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH&interval=year) | Fraunhofer ISE. Day-Ahead-Auktion Schweiz: Preis (EUR/MWh) und gehandeltes Volumen (MWh) ab 2014; stündlich, ab 01.10.2025 in 15 min. Datenquelle laut Energy-Charts: ENTSO-E, EPEX SPOT. Lizenz CC BY 4.0. |
 
 
 ## Exploratory Data Analysis
