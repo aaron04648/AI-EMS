@@ -20,7 +20,7 @@
 > 
 
 ### Pitch
-Dynamic electricity tariffs make the timing of household consumption increasingly important. Swiss **day-ahead prices are fixed at auction on the previous day**: after publication, the next delivery day's prices are already available to everyone. Our primary focus is to explain the market expectations behind these prices and investigate an extended **48h planning profile: 24h fixed prices + 24h predicted prices**. An optional household PV and battery calculator will measure whether the additional forecast day improves scheduling compared with using published prices alone. Savings depend on the tariff, consumption, battery constraints and forecast accuracy; they are not guaranteed by this EDA.
+Dynamic electricity tariffs are coming to Switzerland across most utilities, though they are currently only available in select regions like Zurich via EKZ. Our primary focus is analyzing European market factors to demystify these price swings and accurately simulate day-ahead prices 24 hours in advance. Building on this transparent analysis, an optional calculator demonstrates a practical use case: optimizing energy usage to save up to 0.15 CHF per 15-minute interval—roughly 500 CHF annually—while helping attract more people to solar power and driving overall sustainability.
 
 ---
 
@@ -28,21 +28,15 @@ Dynamic electricity tariffs make the timing of household consumption increasingl
 
 ## Problem Statement
 
-Households need to understand dynamic electricity prices and schedule flexible consumption, PV and batteries accordingly. However, the prices in our dataset are **day-ahead auction prices, not real-time prices**. The next delivery day's hourly prices are fixed on the previous day and publicly available after the auction. An EMS can therefore optimize that known period without forecasting it.
-
-Our analysis is effectively **reverse-engineering day-ahead price formation**: market participants bid on their expectations of next-day demand, sunshine, wind and supply. Low prices during hours with high subsequently measured solar generation are consistent with anticipated solar supply; they do not mean that simultaneous production changed an already fixed price. We do not observe participants' forecasts or a single central pricing model, and observational correlations cannot identify causality.
-
-The potential forecasting value lies **beyond the published delivery day**, for example in a 48h profile consisting of 24h known and 24h predicted prices. This reduces the optimization headroom attributable to our model: it must add value over an EMS that already uses public prices, rather than claim all load-shifting savings. The 24h/48h illustration refers to aligned delivery days; the rolling known horizon depends on the time of publication, and daylight-saving delivery days contain 23 or 25 hours.
+As Swiss utilities increasingly adopt dynamic 15-minute electricity tariffs, most households remain completely unaware of the underlying European market drivers causing price fluctuations and how to leverage them. Without transparent market analysis and predictive tooling, consumers miss out on significant cost savings and remain hesitant to invest in photovoltaic systems and home batteries.
 
 ## Goals
 
-### 1. Core Market Analysis & Extended Price Profile:
-By the end of the semester, explain Swiss day-ahead price patterns using European market data and evaluate a **48h delivery-day profile (24h published + 24h predicted)**. At an issuance time after the auction on day D, D+1 is known and D+2 is the forecast target. Only information available at that issuance time may be used, including appropriately archived **D+2** solar, wind and load forecasts. D+1 forecasts and delayed Pronovo measurements are not substitutes.
-
-The original target **nMAE < 10%** (MAE / mean absolute price), with rMAE against same-hour-last-week persistence and a chronological holdout of at least 12 months, remains an **aspirational target for the newly defined second-day task**, not a result established by this EDA. The volatility analysis in [analysis/06_zielwert.py](analysis/06_zielwert.py) motivates the metric, but neither its threshold nor the existing pre-auction next-day model results validate D+2 performance. Report errors for the predicted block separately from the known block; including fixed prices would artificially improve accuracy. Compare 24h, 48h and 168h persistence using only published prices, and reproduce the actual issuance schedule in evaluation.
+### 1. Core Market Analysis & 24h Price Simulation:
+By the end of the semester, we aim to develop and validate a transparent analysis engine processing European day-ahead prices and generation data (via energy-charts.info) to explain price drivers. Success is measured by a normalized Mean Absolute Error (nMAE = MAE / mean absolute price) of under 10% for our 24-hour day-ahead price forecasts, evaluated on a holdout of at least 12 months (one full seasonal cycle). The 10% threshold follows from a volatility analysis of the Swiss day-ahead prices 2015–2026 ([analysis/06_zielwert.py](analysis/06_zielwert.py)). Over a year, a naive same-hour-last-week forecast reaches an nMAE of 14–25% (Ø 17.6%), depending on how strongly prices fluctuate. State-of-the-art models reduce this error to 38–68% of the naive one (relative MAE, rMAE; Lago et al., 2021). At average volatility, nMAE < 10% therefore corresponds to rMAE ≈ 0.57. We report the rMAE alongside the nMAE so that the result stays comparable across periods with different price volatility.
 
 ### 2. Optional Predictive Use-Case & Impact Calculator:
-Within the same timeframe, simulate household PV and battery schedules and compare **published-price-only planning** with the extended profile under identical consumption, tariff and battery assumptions. Report incremental net savings after efficiency losses, capacity and power limits, and forecast errors. Wholesale EUR/MWh spreads are not household CHF savings; claims of 0.15 CHF per interval or 500 CHF annually require a separate, validated scenario. The calculator illustrates decisions rather than proving that transparency causes solar adoption.
+ Within the same timeframe, we will implement an optional model predictive control calculator to simulate household PV production and battery storage schedules. This will be measured by its ability to quantify concrete financial benefits—demonstrating savings of up to 0.15 CHF per 15-minute interval (roughly 500 CHF annually)—while successfully proving how such transparency incentivizes solar adoption and enhances ecological sustainability.
 
 ### 3. Documentation & Expert Validation:
 We will finalize a comprehensive technical report and interactive demonstration by project completion, validating the usability and practical viability of our system through a dedicated presentation and review with the company Plan-E after the final discussion.
@@ -50,6 +44,10 @@ We will finalize a comprehensive technical report and interactive demonstration 
 # 2. Data Understanding
 
 ## Data Sources
+
+> ⚠️ **Deliverable - 12.11.2026:** Define data sources.
+
+*You are free to choose any data source. As a starting point you might consider [Kaggle](https://www.kaggle.com/datasets) or Swiss open data platforms (e.g. Open Government Data [Zurich](https://www.stadt-zuerich.ch/de/politik-und-verwaltung/statistik-und-daten/open-government-data.html), [Luzern](https://www.stadtluzern.ch/opengovernmentdata), or [Switzerland](https://opendata.swiss/de)) as potential data sources.*
 
 | Data source | Description |
 |-------------|-------------|
@@ -59,53 +57,46 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 ## Exploratory Data Analysis
 
+> ⚠️ **Deliverable - 12.11.2026:** Conduct an exploratory data analysis.
+
+*A hands-on definition of EDA can be found [here](https://www.geeksforgeeks.org/data-analysis/what-is-exploratory-data-analysis/). The implementation of the EDA should be contained in a dedicated notebook.*
+
 - Notebook to run the EDA: [01_data_understanding.ipynb](notebooks/01_data_understanding.ipynb)
 
-The notebook loads the data behind the two Energy-Charts views, caches the annual JSON files in `data/raw/energy_charts_web/` (not versioned), and exports the PNGs below at **180 dpi**. The report cutoff remains **30.10.2026**, so the rerun does not silently extend the observation period. The source was retrieved again on **09.11.2026**; the production series still ends on **31.08.2026**. [Computed summary statistics and cache checksums](figures/eda/summary_statistics.json) record the exact input basis and environment.
-
-Run from the repository root with Python 3.13:
-
-```powershell
-python -m pip install -r notebooks\requirements.txt
-python -m nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=1800 notebooks\01_data_understanding.ipynb
-```
-
-Alternatively, open the notebook and run all cells in order. The first run requires internet access; subsequent runs use the same local cache, including 2026. To deliberately refresh inputs, remove only the relevant annual cache files and rerun; historical revisions can change results, so compare the exported SHA-256 checksums. The separate `analysis/` model pipeline is not required for this EDA.
+The notebook downloads exactly the data behind the two Energy-Charts views (cached in `data/raw/energy_charts_web/`, not versioned). Data retrieved on 30.10.2026.
 
 ### Data Quality
 
-#### Coverage, missing values and schema changes
+**Day-ahead price and volume (2015 – 30.10.2026)**
+- 103'704 hourly values, no gaps on the UTC time axis and no missing prices. All columns are numeric (`float64`).
+- The Swiss series on Energy-Charts stays **hourly** even after the EU day-ahead auction switched to 15-minute products (01.10.2025). A forecast for a 15-minute tariff (EKZ) therefore applies per hour.
+- Volume has exactly one missing value per year: 03:00 on the day of the switch to daylight saving time (an artefact of the source).
+- 2015–2017 the file also contains the *IT-North-CH* auction; it is dropped.
+- Extreme values are real market events, not errors (min −464 EUR/MWh in 2026, max 872 EUR/MWh in 2022), so they are kept.
 
-| Check | Day-ahead price / volume | Pronovo production |
-|---|---|---|
-| Local-time coverage | 01.01.2015–30.10.2026 | 01.01.2020–31.08.2026 |
-| Observations / UTC timestamp gaps | 103'704 / **0** | 233'756 / **0** |
-| Resolution | **Hourly**, including after 01.10.2025 | 15-minute grid; load is hourly repeated four times, trade mostly hourly |
-| Missing values | **0 prices**, **12 volume values** | **0 PV, wind or load values**; 6 missing trade values; many structural gaps in renamed/introduced categories |
-| Types and uniqueness | Numeric columns; unique, sorted UTC index | Numeric columns; unique, sorted UTC index |
-| Availability | Fixed at the previous day's auction | Source metadata states a one-month publication delay; this snapshot has a longer gap to the report cutoff |
-
-**Coverage and missing-value chart.** The top panel shows the proportion of non-missing values per production series and year, not the share of a complete calendar year. Nuclear and pumped-storage consumption only become available on 01.10.2022; hydro is aggregated differently in 2020, and biomass/fossil categories change names. The bottom panel shows one missing volume value each year, at 03:00 local time on the spring daylight-saving transition. Missing categories are not zero production. Comparable generation analysis starts on **01.10.2022**, with whole-year comparisons from 2023.
-
-![Coverage and missing values: Pronovo schema by year and missing price/volume counts](figures/eda/00_datenqualitaet.png)
-
-#### Full time series and changes in price level
-
-**Swiss day-ahead prices, 2015–30.10.2026.** Daily means and a centered 30-day mean reveal structural changes rather than timestamp gaps. Annual mean prices ranged from **34.00 to 52.22 EUR/MWh in 2015–2020**, reached **281.65 in 2022**, and are **131.31 in Jan–Oct 2026** (partial year). The crisis year contains **3'132 hours above 300 EUR/MWh**. These regimes challenge stationarity; evaluate models chronologically across seasons and price levels. The centered smoother is descriptive, not an available forecasting feature.
-
-![Full Swiss day-ahead price series: daily means and 30-day mean](figures/eda/01_preis_zeitverlauf.png)
-
-#### Outliers and price distribution
-
-**Hourly price distribution, last 24 months.** All **17'521 observations** are shown without clipping, including **542 negative-price hours**. The full-series extremes are **−463.68 EUR/MWh (2026)** and **871.61 EUR/MWh (2022)**; the histogram window has a maximum of **596.70 EUR/MWh**. Extreme prices are economically plausible market outcomes and are retained, not automatically treated as measurement errors. The notebook also counts annual values outside P25 − 3 × IQR / P75 + 3 × IQR for transparent screening. This is not independent verification of every observation.
-
-![Unclipped hourly Swiss price histogram for the last 24 months](figures/eda/02_preis_verteilung.png)
-
-**Processing and limitations.** The unrelated IT-North-CH auction is excluded. Prices and generation are joined on UTC hours; MW production is averaged to hourly power, while energy totals integrate the original quarter-hour observations (MW × 0.25h). Aliases are grouped only after examining schema coverage. Missing volume remains missing during aggregation. We do not interpolate the price series, drop negative prices, or invent quarter-hour price variation: four repeated hourly values cannot represent actual 15-minute tariff dynamics. Delayed measured production can support retrospective explanation, but not live forecasting; even a 48h lag does not overcome a one-month publication delay.
+**Electricity production, Pronovo (2020 – 31.08.2026)**
+- 15-minute values without gaps, but published with a **one-month delay**. They can be used for analysis and training, not as a live input for the 24 h forecast.
+- The **schema changes over time**: in 2020 hydro power is only reported as one total, nuclear and pumped-storage consumption are missing until 30.09.2022, and the biomass and fossil categories are renamed twice. The data set is complete and comparable only from **01.10.2022** onwards (year-to-year comparisons from 2023).
+- **Load** is only hourly (every value repeated four times in the 15-minute grid), and so is most of the cross-border trade balance. Hydro, nuclear and pumped-storage values are genuine 15-minute values.
 
 ### Insights
 
+**Data coverage limits which production comparisons are meaningful.** The figure shows the share of non-missing values by Pronovo series and year, alongside missing price/volume values. Structural schema gaps are not zero production; the comparable generation analysis begins on 01.10.2022.
+
+![Coverage and missing values: Pronovo schema by year and missing price/volume counts](figures/eda/00_datenqualitaet.png)
+
+
 The following relationships describe **already fixed day-ahead prices and subsequently measured production**, not real-time price setting. They are candidate signals for a future availability-aware forecasting study, not proof of predictive or causal performance. Price-only figures end on 30.10.2026; joint production/price figures end on 31.08.2026. Plot labels retain the notebook's German terminology; the English captions explain each chart.
+
+#### Price levels shift substantially over time
+
+**Swiss day-ahead prices, 2015–30.10.2026.** Daily means and the 30-day mean highlight the 2022 price-regime break. Annual mean prices were **34.00–52.22 EUR/MWh in 2015–2020**, reached **281.65 in 2022**, and were **131.31 in Jan–Oct 2026** (partial year). The crisis year included **3'132 hours above 300 EUR/MWh**. Evaluate models chronologically across regimes; the centered smoother is descriptive, not an available forecast feature.
+
+![Full Swiss day-ahead price series: daily means and 30-day mean](figures/eda/01_preis_zeitverlauf.png)
+
+**Hourly price distribution, last 24 months.** The untrimmed histogram includes **17'521 observations**, of which **542 hours had negative prices**. The full-series extremes were **−463.68 EUR/MWh (2026)** and **871.61 EUR/MWh (2022)**; the histogram window's maximum is **596.70 EUR/MWh**. These extreme prices are retained as market observations, not automatically treated as measurement errors.
+
+![Unclipped hourly Swiss price histogram for the last 24 months](figures/eda/02_preis_verteilung.png)
 
 #### Daily patterns reflect anticipated demand and production
 
