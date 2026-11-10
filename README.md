@@ -1,7 +1,5 @@
 # Project Report
 
-*The project will be structured using the CRISP-DM framework. Details about the framework can be found [here](https://www.datascience-pm.com/crisp-dm-2/). We will not conduct the deployment step. This page will serve as your project report. The current content provides a rough structure and helps you keep track of the deadlines for each deliverable. The first- and second-level headings should remain as provided in the template. All other content can be freely edited and adapted to your project.*
-
 ## Project Details
 
 > 
@@ -45,10 +43,6 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 ## Data Sources
 
-> ⚠️ **Deliverable - 12.11.2026:** Define data sources.
-
-*You are free to choose any data source. As a starting point you might consider [Kaggle](https://www.kaggle.com/datasets) or Swiss open data platforms (e.g. Open Government Data [Zurich](https://www.stadt-zuerich.ch/de/politik-und-verwaltung/statistik-und-daten/open-government-data.html), [Luzern](https://www.stadtluzern.ch/opengovernmentdata), or [Switzerland](https://opendata.swiss/de)) as potential data sources.*
-
 | Data source | Description |
 |-------------|-------------|
 | [Energy-Charts – Stromproduktion Schweiz (Pronovo)](https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year) | Fraunhofer ISE. Net electricity generation in Switzerland by source (hydro by category, nuclear, PV, wind, biomass, fossil), pumped-storage consumption, load and cross-border trade; 15-minute resolution in MW from 2020. Underlying sources according to Energy-Charts: Pronovo, ENTSO-E, SFOE (energetically corrected, published with a one-month delay). License CC BY 4.0. |
@@ -56,10 +50,6 @@ We will finalize a comprehensive technical report and interactive demonstration 
 
 
 ## Exploratory Data Analysis
-
-> ⚠️ **Deliverable - 12.11.2026:** Conduct an exploratory data analysis.
-
-*A hands-on definition of EDA can be found [here](https://www.geeksforgeeks.org/data-analysis/what-is-exploratory-data-analysis/). The implementation of the EDA should be contained in a dedicated notebook.*
 
 - Notebook to run the EDA: [01_data_understanding.ipynb](notebooks/01_data_understanding.ipynb)
 
@@ -168,23 +158,18 @@ The following relationships describe **already fixed day-ahead prices and subseq
 
 **Is the data suitable?** The complete price series is suitable as a target and supports clear temporal signals. Pronovo supports retrospective explanation after schema harmonization, but a deployable extended profile additionally needs archived, issuance-time-available D+2 forecasts and regional information. The next modeling step is to verify that availability and evaluate the second-day prediction separately, then compare scheduling against an EMS using only published prices. This EDA establishes relevant patterns and limitations, not a proven 48h forecasting product.
 
+### Visualizations
+
+The entire set of visualizations can be found in `figures/eda`.
+
 ---
 
 # 3. Data Preparation
-*Data preparation (also known as feature engineering) consists of steps such as cleaning, filtering, joining, [aggregating](https://www.geeksforgeeks.org/python/grouping-and-aggregating-with-pandas/), [normalizing](https://www.geeksforgeeks.org/python/data-normalization-with-pandas/), and transforming the data. The goal is to have one dataset that contains all features and is ready to be used in the follow-up data modeling. All data preparation is contained in one notebook that may use modular code. Data preparation is not a deliverable but goes hand in hand with the follow-up step of data modeling.*
 
 - Notebook to run the data preparation: [02_data_preparation.ipynb](notebooks/02_data_preparation.ipynb)
 - Reusable, modular code is outsourced to separate `.py` files: [src/data_preparation.py](src/data_preparation.py)
 
 ## Features
-
-*List and describe each feature.*
-
-| Feature | Description |
-|---------|-------------|
-|         |             |
-|         |             |
-|         |             |
 
 ---
 
