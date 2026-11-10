@@ -48,6 +48,7 @@ We will finalize a comprehensive technical report and interactive demonstration 
 | [Energy-Charts – Stromproduktion Schweiz (Pronovo)](https://www.energy-charts.info/charts/power/chart.htm?l=de&c=CH&source=pronovo&interval=year) | Fraunhofer ISE. Net electricity generation in Switzerland by source (hydro by category, nuclear, PV, wind, biomass, fossil), pumped-storage consumption, load and cross-border trade; 15-minute resolution in MW from 2020. Underlying sources according to Energy-Charts: Pronovo, ENTSO-E, SFOE (energetically corrected, published with a one-month delay). License CC BY 4.0. |
 | [Energy-Charts – Börsenstrompreise und Handelsvolumen Schweiz](https://www.energy-charts.info/charts/price_volume/chart.htm?l=de&c=CH&interval=year) | Fraunhofer ISE. Swiss day-ahead auction: price (EUR/MWh) and traded volume (MWh) from 2014, hourly (also after the EU switch to 15-minute products on 01.10.2025). Underlying sources according to Energy-Charts: ENTSO-E, EPEX SPOT. License CC BY 4.0. |
 
+As modelling starts, we will review and add further explanatory variables and data sources if needed; the model may require information beyond the sources listed here. Pronovo will be used retrospectively to identify candidate explanatory variables, not as a direct input to the prediction model. Any model inputs must come from sources available at the forecast issuance time.
 
 ## Exploratory Data Analysis
 
@@ -65,7 +66,7 @@ The notebook downloads exactly the data behind the two Energy-Charts views (cach
 - Extreme values are real market events, not errors (min −464 EUR/MWh in 2026, max 872 EUR/MWh in 2022), so they are kept.
 
 **Electricity production, Pronovo (2020 – 31.08.2026)**
-- 15-minute values without gaps, but published with a **one-month delay**. They can be used for analysis and training, not as a live input for the 24 h forecast.
+- 15-minute values without gaps, but published with a **one-month delay**. They are used for retrospective analysis to identify candidate explanatory variables, not as direct inputs to the prediction model.
 - The **schema changes over time**: in 2020 hydro power is only reported as one total, nuclear and pumped-storage consumption are missing until 30.09.2022, and the biomass and fossil categories are renamed twice. The data set is complete and comparable only from **01.10.2022** onwards (year-to-year comparisons from 2023).
 - **Load** is only hourly (every value repeated four times in the 15-minute grid), and so is most of the cross-border trade balance. Hydro, nuclear and pumped-storage values are genuine 15-minute values.
 
@@ -78,9 +79,9 @@ The notebook downloads exactly the data behind the two Energy-Charts views (cach
 
 The following relationships describe **already fixed day-ahead prices and subsequently measured production**, not real-time price setting. They are candidate signals for a future availability-aware forecasting study, not proof of predictive or causal performance. Price-only figures end on 30.10.2026; joint production/price figures end on 31.08.2026. Plot labels retain the notebook's German terminology; the English captions explain each chart.
 
-#### Price levels shift substantially over time
+#### Yearly price levels shift substantially over time
 
-**Swiss day-ahead prices, 2015–30.10.2026.** Daily means and the 30-day mean highlight the 2022 price-regime break. Annual mean prices were **34.00–52.22 EUR/MWh in 2015–2020**, reached **281.65 in 2022**, and were **131.31 in Jan–Oct 2026** (partial year). The crisis year included **3'132 hours above 300 EUR/MWh**. Evaluate models chronologically across regimes; the centered smoother is descriptive, not an available forecast feature.
+**Swiss day-ahead prices, 2015–30.10.2026.** Daily means and the 30-day mean highlight the 2022 price-regime break. Annual mean prices were **34.00–52.22 EUR/MWh in 2015–2020**, reached **281.65 in 2022**, and were **131.31 in Jan–Oct 2026** (partial year). The crisis year included **3'132 hours above 300 EUR/MWh**. These year-to-year changes are structural price-level shifts, not evidence of a repeating annual cycle. Evaluate models chronologically across regimes; the centered smoother is descriptive, not an available forecast feature.
 
 ![Full Swiss day-ahead price series: daily means and 30-day mean](figures/eda/01_preis_zeitverlauf.png)
 
@@ -88,7 +89,7 @@ The following relationships describe **already fixed day-ahead prices and subseq
 
 ![Unclipped hourly Swiss price histogram for the last 24 months](figures/eda/02_preis_verteilung.png)
 
-#### Daily patterns reflect anticipated demand and production
+#### Daily, weekly and seasonal patterns
 
 **Seasonal daily profiles, 2015–2026.** Each line is the hourly **median**, and the shaded area is **P25–P75 (the middle 50%)**, not ±25% of the median or a confidence interval. Morning and evening peaks and a midday dip are consistent with expected demand and solar supply. The midday dip is especially clear on spring/summer weekends. Weekdays include holidays; the multi-year profiles mix price regimes, so not every weekday's minimum is at noon.
 
@@ -98,11 +99,13 @@ The following relationships describe **already fixed day-ahead prices and subseq
 
 ![The same seasonal median and interquartile profiles excluding 2022 and 2023](figures/eda/03b_tagesprofile_perzentile_ohne_2022_2023.png)
 
-#### Weekly structure adds information beyond the hour of day
-
 **Price by weekday and season, since 2024.** Seasonal median lines and P25–P75 bands show the weekend discount, most pronounced in spring and summer. Across all seasons, the median is **107.99 EUR/MWh on Tuesday**, **94.92 on Saturday** and **87.08 on Sunday**. These are descriptive pooled comparisons, not a controlled estimate of demand effects. Weekday, season and their interaction are therefore candidate features.
 
 ![Seasonal weekly price patterns with median lines and 25th–75th percentile bands](figures/eda/04_wochenmuster.png)
+
+**Autocorrelation confirms daily and weekly repetition.** The hourly-price ACF since 2024 is **r = 0.847 at 24h**, **0.744 at 48h**, and **0.813 at 168h**, supporting the daily and weekly patterns above and motivating persistence baselines. In 2025, descriptive nMAE is **14.16% (24h)**, **19.29% (48h)** and **15.98% (168h)**; these are not issuance-aware D+2 backtest results. The ACF shown covers hourly lags only (up to 192h), so it does not test annual cycles; the notebook does not calculate PACF.
+
+![Hourly Swiss price autocorrelation with daily, two-day and weekly lags highlighted](figures/eda/13_autokorrelation.png)
 
 #### Intraday spreads create opportunities, but most first-day information is public
 
@@ -148,15 +151,15 @@ The following relationships describe **already fixed day-ahead prices and subseq
 
 ![Side-by-side Swiss solar and wind relationships with price on the same price scale](figures/eda/15_solar_wind.png)
 
-#### Persistence is useful, but accuracy must be tested at the real issuance time
+#### Forecast timing defines the second-day benchmark
 
-**Hourly price autocorrelation, since 2024.** Correlations are **r = 0.847 at 24h**, **0.744 at 48h**, and **0.813 at 168h**. These daily/weekly dependencies motivate persistence baselines. The notebook computes annual descriptive nMAE for all three lags: in **2025**, **14.16% (24h)**, **19.29% (48h)** and **15.98% (168h)**. These are not issuance-aware D+2 backtest results.
-
-![Hourly Swiss price autocorrelation with daily, two-day and weekly lags highlighted](figures/eda/13_autokorrelation.png)
-
-**Forecast timing matters.** After the auction on day D, prices for D+1 are known. A target hour on D+2 has its 24h-lag on D+1, so that lag can already be available; 48h persistence is not the only permitted benchmark. Check publication times for each target hour, especially for rolling horizons and daylight-saving transitions. Delayed Pronovo data cannot be used contemporaneously or with only a short lag. The existing [analysis pipeline](analysis/README.md) studies a pre-auction next-day task; its reported scores do **not** validate the proposed D+2 extension.
+After the auction on day D, prices for D+1 are known. A target hour on D+2 has its 24h-lag on D+1, so that lag can already be available; 48h persistence is not the only permitted benchmark. Check publication times for each target hour, especially for rolling horizons and daylight-saving transitions. Delayed Pronovo data are retrospective candidates for identifying explanatory variables, not contemporaneous or lagged inputs to the prediction model. The existing [analysis pipeline](analysis/README.md) studies a pre-auction next-day task; its reported scores do **not** validate the proposed D+2 extension.
 
 **Is the data suitable?** The complete price series is suitable as a target and supports clear temporal signals. Pronovo supports retrospective explanation after schema harmonization, but a deployable extended profile additionally needs archived, issuance-time-available D+2 forecasts and regional information. The next modeling step is to verify that availability and evaluate the second-day prediction separately, then compare scheduling against an EMS using only published prices. This EDA establishes relevant patterns and limitations, not a proven 48h forecasting product.
+
+#### Summary / Conclusion
+
+The price series shows substantial yearly regime shifts alongside daily and weekly patterns, with the strongest midday dips in summer. Swiss residual load and solar are useful retrospective explanatory candidates, while measured Swiss wind has a weaker association; these relationships are not causal findings or proof of D+2 forecast accuracy. Pronovo is used to identify candidate variables retrospectively, not as a direct input to the prediction model. Next, add further explanatory data as needed, verify that each source is available at forecast issuance, evaluate the D+2 block separately, and compare EMS scheduling with an approach using the published prices.
 
 ### Visualizations
 
