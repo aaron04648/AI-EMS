@@ -1,0 +1,599 @@
+{
+  "report_cutoff": "2026-10-30",
+  "executed_at": "2026-11-09T16:14:49.638156+00:00",
+  "quality": {
+    "price": {
+      "start": "2014-12-31T23:00:00+00:00",
+      "end": "2026-10-30T22:00:00+00:00",
+      "rows": 103704,
+      "missing_timestamps": 0,
+      "missing_values": {
+        "price": 0,
+        "volume": 12
+      }
+    },
+    "power": {
+      "start": "2019-12-31T23:00:00+00:00",
+      "end": "2026-08-31T21:45:00+00:00",
+      "rows": 233756,
+      "missing_timestamps": 0,
+      "missing_values": {
+        "Grenzüberschreitender Stromhandel": 6,
+        "Wasser": 198620,
+        "Biogas": 11612,
+        "Biomasse": 222144,
+        "Klärgas": 11612,
+        "Energiepflanzen": 140152,
+        "Forst- und Landwirtschaftliche Abfälle": 166556,
+        "Kehrichtverbrennung": 11612,
+        "Wind": 0,
+        "Photovoltaik": 0,
+        "Last": 0,
+        "Abwasser": 35136,
+        "Ausleitwasser": 35136,
+        "Dotierwasser": 35136,
+        "Durchlaufwasser": 35136,
+        "Pumpspeicher Erzeugung": 35136,
+        "Speicherwasser": 35136,
+        "Trinkwasser": 35136,
+        "Pumpspeicher Verbrauch": 96380,
+        "Kernenergie": 96380,
+        "Erdgas Dampfturbine": 216284,
+        "Gas- und Dampfkombikraftwerk": 216284,
+        "Gasturbine": 216284,
+        "Verbrennungsmotor": 216284,
+        "Holzenergie": 113852,
+        "Gasförmige fossile Energieträger": 113852,
+        "Flüssige fossile Energieträger": 113852
+      }
+    }
+  },
+  "yearly_price": {
+    "2015": {
+      "Mittel": 40.29696689497717,
+      "Median": 40.935,
+      "Std": 13.148954743087259,
+      "Min": -11.66,
+      "Max": 114.98,
+      "Std. < 0 €": 9,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 1,
+      "Stunden": 8760
+    },
+    "2016": {
+      "Mittel": 37.87981557377049,
+      "Median": 34.33,
+      "Std": 16.783056095711178,
+      "Min": -45.68,
+      "Max": 120.9,
+      "Std. < 0 €": 24,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 11,
+      "Stunden": 8784
+    },
+    "2017": {
+      "Mittel": 46.000726027397256,
+      "Median": 41.25,
+      "Std": 19.596939864068112,
+      "Min": -49.95,
+      "Max": 179.92,
+      "Std. < 0 €": 5,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 43,
+      "Stunden": 8760
+    },
+    "2018": {
+      "Mittel": 52.216961187214615,
+      "Median": 51.36,
+      "Std": 16.43203948740334,
+      "Min": -30.62,
+      "Max": 161.35,
+      "Std. < 0 €": 29,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 12,
+      "Stunden": 8760
+    },
+    "2019": {
+      "Mittel": 40.915366438356166,
+      "Median": 39.97,
+      "Std": 12.33416887524658,
+      "Min": -39.45,
+      "Max": 108.11,
+      "Std. < 0 €": 17,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 19,
+      "Stunden": 8760
+    },
+    "2020": {
+      "Mittel": 34.00179644808743,
+      "Median": 34.59,
+      "Std": 14.751127121130041,
+      "Min": -59.61,
+      "Max": 126.7,
+      "Std. < 0 €": 75,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 39,
+      "Stunden": 8784
+    },
+    "2021": {
+      "Mittel": 114.93946461187214,
+      "Median": 79.67500000000001,
+      "Std": 83.93513079036475,
+      "Min": -79.4,
+      "Max": 532.21,
+      "Std. < 0 €": 41,
+      "Std. > 300 €": 402,
+      "IQR-Ausreisser": 26,
+      "Stunden": 8760
+    },
+    "2022": {
+      "Mittel": 281.65342579908673,
+      "Median": 251.3,
+      "Std": 128.1952248503251,
+      "Min": -1.0,
+      "Max": 871.61,
+      "Std. < 0 €": 1,
+      "Std. > 300 €": 3132,
+      "IQR-Ausreisser": 2,
+      "Stunden": 8760
+    },
+    "2023": {
+      "Mittel": 107.46735616438356,
+      "Median": 106.475,
+      "Std": 40.47223185769976,
+      "Min": -142.88,
+      "Max": 268.8,
+      "Std. < 0 €": 76,
+      "Std. > 300 €": 0,
+      "IQR-Ausreisser": 12,
+      "Stunden": 8760
+    },
+    "2024": {
+      "Mittel": 75.95615095628415,
+      "Median": 75.79,
+      "Std": 38.99139221368265,
+      "Min": -427.51,
+      "Max": 310.64,
+      "Std. < 0 €": 292,
+      "Std. > 300 €": 2,
+      "IQR-Ausreisser": 42,
+      "Stunden": 8784
+    },
+    "2025": {
+      "Mittel": 101.68819063926941,
+      "Median": 104.57,
+      "Std": 40.84327322731584,
+      "Min": -262.21,
+      "Max": 317.97,
+      "Std. < 0 €": 303,
+      "Std. > 300 €": 1,
+      "IQR-Ausreisser": 77,
+      "Stunden": 8760
+    },
+    "2026": {
+      "Mittel": 131.31462733773378,
+      "Median": 132.07999999999998,
+      "Std": 60.80262005275669,
+      "Min": -463.68,
+      "Max": 596.7,
+      "Std. < 0 €": 239,
+      "Std. > 300 €": 28,
+      "IQR-Ausreisser": 58,
+      "Stunden": 7272
+    }
+  },
+  "daily_spread": {
+    "2015": {
+      "mean": 24.031698630136987,
+      "median": 23.1,
+      "max": 70.92
+    },
+    "2016": {
+      "mean": 22.115355191256832,
+      "median": 18.75,
+      "max": 76.41999999999999
+    },
+    "2017": {
+      "mean": 24.09358904109589,
+      "median": 20.58,
+      "max": 101.34
+    },
+    "2018": {
+      "mean": 24.62378082191781,
+      "median": 23.35000000000001,
+      "max": 102.3
+    },
+    "2019": {
+      "mean": 19.813561643835616,
+      "median": 18.740000000000002,
+      "max": 70.48
+    },
+    "2020": {
+      "mean": 21.567677595628417,
+      "median": 18.564999999999998,
+      "max": 86.46000000000001
+    },
+    "2021": {
+      "mean": 56.72142465753424,
+      "median": 38.68000000000001,
+      "max": 214.17999999999998
+    },
+    "2022": {
+      "mean": 126.42249315068493,
+      "median": 110.28,
+      "max": 368.0
+    },
+    "2023": {
+      "mean": 62.42120547945206,
+      "median": 54.16000000000001,
+      "max": 235.3
+    },
+    "2024": {
+      "mean": 61.6051912568306,
+      "median": 51.705,
+      "max": 495.0
+    },
+    "2025": {
+      "mean": 79.37531506849315,
+      "median": 67.24000000000001,
+      "max": 365.79999999999995
+    },
+    "2026": {
+      "mean": 110.47006600660066,
+      "median": 101.87,
+      "max": 591.88
+    }
+  },
+  "daily_profiles_without_2022_2023": [
+    {
+      "weekend": false,
+      "season": "Frühling",
+      "Minimum [EUR/MWh]": 33.78,
+      "Stunde Minimum": 3,
+      "Maximum [EUR/MWh]": 54.32,
+      "Stunde Maximum": 8,
+      "Spanne Medianprofil [EUR/MWh]": 20.54
+    },
+    {
+      "weekend": false,
+      "season": "Herbst",
+      "Minimum [EUR/MWh]": 45.16,
+      "Stunde Minimum": 3,
+      "Maximum [EUR/MWh]": 78.23,
+      "Stunde Maximum": 19,
+      "Spanne Medianprofil [EUR/MWh]": 33.07000000000001
+    },
+    {
+      "weekend": false,
+      "season": "Sommer",
+      "Minimum [EUR/MWh]": 34.74,
+      "Stunde Minimum": 4,
+      "Maximum [EUR/MWh]": 52.14,
+      "Stunde Maximum": 19,
+      "Spanne Medianprofil [EUR/MWh]": 17.4
+    },
+    {
+      "weekend": false,
+      "season": "Winter",
+      "Minimum [EUR/MWh]": 44.99,
+      "Stunde Minimum": 4,
+      "Maximum [EUR/MWh]": 70.48,
+      "Stunde Maximum": 18,
+      "Spanne Medianprofil [EUR/MWh]": 25.490000000000002
+    },
+    {
+      "weekend": true,
+      "season": "Frühling",
+      "Minimum [EUR/MWh]": 12.93,
+      "Stunde Minimum": 14,
+      "Maximum [EUR/MWh]": 43.715,
+      "Stunde Maximum": 20,
+      "Spanne Medianprofil [EUR/MWh]": 30.785000000000004
+    },
+    {
+      "weekend": true,
+      "season": "Herbst",
+      "Minimum [EUR/MWh]": 40.295,
+      "Stunde Minimum": 14,
+      "Maximum [EUR/MWh]": 67.015,
+      "Stunde Maximum": 19,
+      "Spanne Medianprofil [EUR/MWh]": 26.72
+    },
+    {
+      "weekend": true,
+      "season": "Sommer",
+      "Minimum [EUR/MWh]": 18.21,
+      "Stunde Minimum": 14,
+      "Maximum [EUR/MWh]": 43.22,
+      "Stunde Maximum": 22,
+      "Spanne Medianprofil [EUR/MWh]": 25.009999999999998
+    },
+    {
+      "weekend": true,
+      "season": "Winter",
+      "Minimum [EUR/MWh]": 42.23,
+      "Stunde Minimum": 4,
+      "Maximum [EUR/MWh]": 61.21,
+      "Stunde Maximum": 18,
+      "Spanne Medianprofil [EUR/MWh]": 18.980000000000004
+    }
+  ],
+  "profile_iqr": {
+    "Winter": {
+      "IQR-Breite mit 2022–23": 75.29135416666666,
+      "IQR-Breite ohne 2022–23": 45.64010416666667,
+      "Median-Tagesspanne ohne 2022–23": 22.235000000000003
+    },
+    "Frühling": {
+      "IQR-Breite mit 2022–23": 64.42151041666666,
+      "IQR-Breite ohne 2022–23": 39.789739583333336,
+      "Median-Tagesspanne ohne 2022–23": 25.6625
+    },
+    "Sommer": {
+      "IQR-Breite mit 2022–23": 56.729375000000005,
+      "IQR-Breite ohne 2022–23": 41.235104166666666,
+      "Median-Tagesspanne ohne 2022–23": 21.205
+    },
+    "Herbst": {
+      "IQR-Breite mit 2022–23": 75.48567708333333,
+      "IQR-Breite ohne 2022–23": 63.65432291666667,
+      "Median-Tagesspanne ohne 2022–23": 29.895000000000003
+    }
+  },
+  "weekday_since_2024": {
+    "0": {
+      "median": 105.19,
+      "mean": 106.82872430301323,
+      "count": 3551
+    },
+    "1": {
+      "median": 107.99,
+      "mean": 110.21890484234234,
+      "count": 3552
+    },
+    "2": {
+      "median": 107.27,
+      "mean": 111.2907347972973,
+      "count": 3552
+    },
+    "3": {
+      "median": 105.82,
+      "mean": 108.44585867117117,
+      "count": 3552
+    },
+    "4": {
+      "median": 103.14,
+      "mean": 105.94016047297298,
+      "count": 3552
+    },
+    "5": {
+      "median": 94.91499999999999,
+      "mean": 87.69722505668935,
+      "count": 3528
+    },
+    "6": {
+      "median": 87.07499999999999,
+      "mean": 78.1846343537415,
+      "count": 3528
+    }
+  },
+  "seasonal_price_on_joint_period_since_2024": {
+    "Winter": {
+      "hourly_median": {
+        "0": 106.3,
+        "1": 102.325,
+        "2": 100.58,
+        "3": 100.085,
+        "4": 100.0,
+        "5": 103.465,
+        "6": 114.99,
+        "7": 123.88,
+        "8": 129.135,
+        "9": 125.41999999999999,
+        "10": 120.505,
+        "11": 117.535,
+        "12": 113.225,
+        "13": 113.745,
+        "14": 117.36,
+        "15": 124.38499999999999,
+        "16": 129.03,
+        "17": 132.995,
+        "18": 133.49,
+        "19": 130.20999999999998,
+        "20": 125.0,
+        "21": 118.57,
+        "22": 114.95,
+        "23": 109.005
+      },
+      "profile_spread": 33.49000000000001
+    },
+    "Sommer": {
+      "hourly_median": {
+        "0": 96.99,
+        "1": 91.96000000000001,
+        "2": 88.91499999999999,
+        "3": 86.525,
+        "4": 87.15,
+        "5": 90.6,
+        "6": 98.09,
+        "7": 101.005,
+        "8": 92.65,
+        "9": 76.39,
+        "10": 62.62,
+        "11": 50.370000000000005,
+        "12": 38.71,
+        "13": 28.555,
+        "14": 27.825000000000003,
+        "15": 40.655,
+        "16": 56.775,
+        "17": 80.42500000000001,
+        "18": 97.185,
+        "19": 107.31,
+        "20": 113.925,
+        "21": 113.14,
+        "22": 107.86500000000001,
+        "23": 101.21000000000001
+      },
+      "profile_spread": 86.1
+    }
+  },
+  "spearman": {
+    "Residuallast CH": {
+      "Spearman ρ (ab 10/2022)": 0.5682794304882469,
+      "Spearman ρ (ab 2024)": 0.5475738002354809
+    },
+    "Pumpspeicher Verbrauch": {
+      "Spearman ρ (ab 10/2022)": 0.5015971412771995,
+      "Spearman ρ (ab 2024)": 0.5345629193814682
+    },
+    "Pumpspeicher netto": {
+      "Spearman ρ (ab 10/2022)": 0.4284750092313042,
+      "Spearman ρ (ab 2024)": 0.46702411898632734
+    },
+    "Laufwasser": {
+      "Spearman ρ (ab 10/2022)": -0.3755994200077352,
+      "Spearman ρ (ab 2024)": -0.36984411405755585
+    },
+    "Pumpspeicher": {
+      "Spearman ρ (ab 10/2022)": 0.328760748725929,
+      "Spearman ρ (ab 2024)": 0.3622634315001478
+    },
+    "Photovoltaik": {
+      "Spearman ρ (ab 10/2022)": -0.26838807538345044,
+      "Spearman ρ (ab 2024)": -0.2919918277883766
+    },
+    "Last": {
+      "Spearman ρ (ab 10/2022)": 0.32785550428599036,
+      "Spearman ρ (ab 2024)": 0.2621970761186528
+    },
+    "volume": {
+      "Spearman ρ (ab 10/2022)": 0.018886471018459826,
+      "Spearman ρ (ab 2024)": 0.09795211852522369
+    },
+    "Speicherwasser": {
+      "Spearman ρ (ab 10/2022)": 0.051782209176912786,
+      "Spearman ρ (ab 2024)": 0.07926696185722029
+    },
+    "Handel (+ Import)": {
+      "Spearman ρ (ab 10/2022)": 0.05983819631329994,
+      "Spearman ρ (ab 2024)": 0.060180047918886474
+    },
+    "Wind": {
+      "Spearman ρ (ab 10/2022)": 0.006997560508954081,
+      "Spearman ρ (ab 2024)": 0.03947127432844788
+    },
+    "Kernenergie": {
+      "Spearman ρ (ab 10/2022)": 0.2023681978140617,
+      "Spearman ρ (ab 2024)": 0.030184165837201883
+    }
+  },
+  "pv_share_percent": {
+    "2023": 7.405884153405551,
+    "2024": 8.385355646018214,
+    "2025": 13.433972430807819,
+    "2026": 18.4143895818254
+  },
+  "monthly_trade_GWh": {
+    "min": -4039.8089,
+    "max": 1927.494775
+  },
+  "autocorrelation": {
+    "24": 0.847417069967744,
+    "48": 0.7442913604098432,
+    "168": 0.8127334207644749
+  },
+  "baseline_nmae_percent": {
+    "2015": {
+      "nMAE Persistenz 24 h [%]": 15.283215451098977,
+      "nMAE Persistenz 48 h [%]": 21.23927203521092,
+      "nMAE Persistenz 168 h [%]": 14.074639566960474
+    },
+    "2016": {
+      "nMAE Persistenz 24 h [%]": 15.155168641277825,
+      "nMAE Persistenz 48 h [%]": 21.630446335217332,
+      "nMAE Persistenz 168 h [%]": 14.371459099373864
+    },
+    "2017": {
+      "nMAE Persistenz 24 h [%]": 13.25289494442787,
+      "nMAE Persistenz 48 h [%]": 19.20512364413266,
+      "nMAE Persistenz 168 h [%]": 15.10264133940624
+    },
+    "2018": {
+      "nMAE Persistenz 24 h [%]": 12.525144971084373,
+      "nMAE Persistenz 48 h [%]": 17.175713704135863,
+      "nMAE Persistenz 168 h [%]": 14.798767315711684
+    },
+    "2019": {
+      "nMAE Persistenz 24 h [%]": 13.71248065949462,
+      "nMAE Persistenz 48 h [%]": 18.281488978659986,
+      "nMAE Persistenz 168 h [%]": 15.08056341519366
+    },
+    "2020": {
+      "nMAE Persistenz 24 h [%]": 16.9607910759452,
+      "nMAE Persistenz 48 h [%]": 23.89253298627404,
+      "nMAE Persistenz 168 h [%]": 17.74965610787075
+    },
+    "2021": {
+      "nMAE Persistenz 24 h [%]": 13.173815466502305,
+      "nMAE Persistenz 48 h [%]": 18.81605921340024,
+      "nMAE Persistenz 168 h [%]": 18.297015834731816
+    },
+    "2022": {
+      "nMAE Persistenz 24 h [%]": 12.622718595968532,
+      "nMAE Persistenz 48 h [%]": 18.40159787555396,
+      "nMAE Persistenz 168 h [%]": 22.61194680060623
+    },
+    "2023": {
+      "nMAE Persistenz 24 h [%]": 14.959793559522398,
+      "nMAE Persistenz 48 h [%]": 20.949279384499558,
+      "nMAE Persistenz 168 h [%]": 19.04758989896688
+    },
+    "2024": {
+      "nMAE Persistenz 24 h [%]": 21.173789738329408,
+      "nMAE Persistenz 48 h [%]": 27.986305691015993,
+      "nMAE Persistenz 168 h [%]": 24.686835498292425
+    },
+    "2025": {
+      "nMAE Persistenz 24 h [%]": 14.15939131184416,
+      "nMAE Persistenz 48 h [%]": 19.286261736826496,
+      "nMAE Persistenz 168 h [%]": 15.978689300426899
+    },
+    "2026": {
+      "nMAE Persistenz 24 h [%]": 15.526546765823916,
+      "nMAE Persistenz 48 h [%]": 21.86345291785169,
+      "nMAE Persistenz 168 h [%]": 19.286672118810497
+    }
+  },
+  "cache_sha256": {
+    "power_pronovo\\2020.json": "28a65f7ce3ca211bc7175424b5120c3a36490c3962ba2fc96c2b27f9bdcbc1d4",
+    "power_pronovo\\2021.json": "eecfd096fe44dac1a36a1d039e7b62c96d6b7c714964e79176b58f642503fd8d",
+    "power_pronovo\\2022.json": "41d10ed9edc13105a53a33f752b45e72de7026b3fc1b65f304191e87ce3d87d1",
+    "power_pronovo\\2023.json": "a23721ab4da989c764f8b02f8c6753fd6888502b96af81fec6ab696c5bb2edaf",
+    "power_pronovo\\2024.json": "6a479dc9abf736954ce32daafe9a19828d9819d7c8f7697070177611eb921bfb",
+    "power_pronovo\\2025.json": "9d826b488d3599efcfcbecc299db28144273bbacbba389c519a0b4fd5e6dd551",
+    "power_pronovo\\2026.json": "309337a11c87f8b3b573784c449191d806d54d8c97d2bc3a6c37714122425ee6",
+    "price_dayahead\\2015.json": "bdcf6fdaa85f53ce73ef719735548557b8dc61983d1e5f4b6540dad3b39f5c65",
+    "price_dayahead\\2016.json": "17ecbc35d39d0a849cea24aff320ec21fcb3f8f843b0657bdcd42e341097bf65",
+    "price_dayahead\\2017.json": "f216d924e0f8a5b83dbc9537de38c1a1598b96144797ea623579f36ae663da96",
+    "price_dayahead\\2018.json": "5f992445f834a15e03a3f079583d5722d89dae16e58f86b7b13aea5fd5cfb65d",
+    "price_dayahead\\2019.json": "afb3408c8e33fffc853966cfa3dc5cbf9f181922cda828c62fd88e2f5b9653ef",
+    "price_dayahead\\2020.json": "dec32806c196218e43591aeeea4922ce95902944f4bd63d922ee91fe168467fb",
+    "price_dayahead\\2021.json": "83d861afe4afd5faca9e54b412640d56f97f4f90e209a6dedbca2fa33436fefe",
+    "price_dayahead\\2022.json": "3e9f7ef6c884deadf16420af072a4a291e1b910315fedb74f49ad0e1ca3bcde8",
+    "price_dayahead\\2023.json": "1d7a273154e0edd67bd9a0a934e1a9d4d0edf1ee042f4f810120d29b18c249b6",
+    "price_dayahead\\2024.json": "d1b8e3b703327b27007668d765f431ec1a7c04c5b4fdd30520e5ece259bbc788",
+    "price_dayahead\\2025.json": "d37f2cfa845cbd48eafb34a3b1ae0c78836f625a047667bb15ea3491e8ae0d30",
+    "price_dayahead\\2026.json": "38745a7f2b2dec3a798e0db58682d52058d47e457fd20e29cbaacc40f4eaa421"
+  },
+  "environment": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "matplotlib": "3.10.6",
+    "requests": "2.31.0",
+    "nbformat": "5.10.4",
+    "nbclient": "0.10.2",
+    "ipykernel": "6.30.1",
+    "tabulate": "0.10.0",
+    "scipy": "1.17.1"
+  }
+}
