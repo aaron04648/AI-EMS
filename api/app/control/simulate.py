@@ -1,18 +1,18 @@
-"""Closed-Loop-Simulation und Fahrplan.
+"""Closed-loop simulation and schedule.
 
-Backtest über die letzten Tage – wie im Paper werden die Strategien unter gleichen Bedingungen
-verglichen, nur dass die Häuser hier simuliert statt im Labor nachgebaut sind:
+Backtest over the last days – as in the paper, the strategies are compared under equal conditions,
+except that the houses here are simulated instead of rebuilt in the lab:
 
-  ohne Batterie   PV deckt den Verbrauch, Überschuss wird eingespeist
-  RBC             Eigenverbrauchsregel: Überschuss laden, Defizit entladen (Paper 3.5.2)
-  MPC             alle 15 min neu optimiert mit Prognosen (Paper 3.5.3)
-  Optimum         gleiche Optimierung mit perfekter Voraussicht (theoretische Untergrenze)
+  no battery      PV covers consumption, surplus is fed in
+  RBC             self-consumption rule: charge surplus, discharge deficit (paper 3.5.2)
+  MPC             re-optimised every 15 min with forecasts (paper 3.5.3)
+  Optimum         same optimisation with perfect foresight (theoretical lower bound)
 
-Die MPC kennt dabei nur, was sie zum jeweiligen Zeitpunkt wissen kann:
-  - PV: MeteoSwiss-Prognose vom Vortag (ICON-CH2) → statistisches PV-Modell
-  - Last: statistisches Lastprofil
-  - Preise: publizierte EKZ-Tarife (bis 18 Uhr für den Folgetag), danach statistische Prognose
-Abgerechnet wird mit den Ist-Werten: PV aus MeteoSwiss-Messungen, synthetische Ist-Last.
+The MPC only knows what it can know at the respective point in time:
+  - PV: MeteoSwiss forecast from the previous day (ICON-CH2) → statistical PV model
+  - Load: statistical load profile
+  - Prices: published EKZ tariffs (by 18:00 for the following day), afterwards statistical forecast
+Billing uses the actual values: PV from MeteoSwiss measurements, synthetic actual load.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ HORIZON = 96  # 24 h
 
 
 def _quarters(hourly: pd.Series, index: pd.DatetimeIndex) -> pd.Series:
-    """Stundenmittel (Zeitstempel = Ende der Stunde) auf Viertelstunden (Zeitstempel = Beginn) verteilen."""
+    """Distribute hourly means (timestamp = end of hour) to quarter hours (timestamp = start)."""
     hour_end = index.floor("h") + pd.Timedelta(hours=1)
     return pd.Series(hourly.reindex(hour_end).to_numpy(), index=index).ffill().fillna(0.0)
 
@@ -46,13 +46,13 @@ class Inputs:
     pv_forecast: np.ndarray
     load_actual: np.ndarray
     load_forecast: np.ndarray
-    price_import: pd.Series  # Ist-Tarif (Rp./kWh), über das Fenster hinaus soweit publiziert
+    price_import: pd.Series  # actual tariff (ct/kWh), beyond the window as far as published
     price_export: pd.Series
     annual_kwh: float
 
 
 class PriceOracle:
-    """Liefert für einen Zeitpunkt die Preise, die damals bekannt waren (+ statistische Prognose)."""
+    """Returns for a point in time the prices that were known then (+ statistical forecast)."""
 
     def __init__(self, actual: pd.Series):
         self.actual = actual.sort_index()
@@ -70,7 +70,7 @@ class PriceOracle:
 
 
 # ---------------------------------------------------------------------------
-# Anwendung eines Sollwerts auf das „reale“ System (vereinfachte Sicherheitsschicht)
+# Applying a setpoint to the "real" system (simplified safety layer)
 # ---------------------------------------------------------------------------
 
 def _apply(setpoint: float, pv: float, load: float, soc: float, bat: Battery, grid: Grid,
@@ -92,14 +92,14 @@ def _apply(setpoint: float, pv: float, load: float, soc: float, bat: Battery, gr
     net = load - pv + charge - discharge
     grid_import = max(net, 0.0)
     surplus = max(-net, 0.0)
-    # Abregelung bei negativem Einspeisepreis (nur intelligente Strategien) und am Exportlimit
+    # Curtailment at negative feed-in price (smart strategies only) and at the export limit
     grid_export = 0.0 if (curtail and price_export < 0) else min(surplus, grid.export_kw)
     return {"charge": charge, "discharge": discharge, "import": grid_import, "export": grid_export,
             "curtailed": surplus - grid_export, "soc": soc}
 
 
 def _rbc(pv: float, load: float, soc: float, bat: Battery) -> float:
-    """Eigenverbrauchsregel: Sollwert = PV-Überschuss (positiv) bzw. Defizit (negativ)."""
+    """Self-consumption rule: setpoint = PV surplus (positive) or deficit (negative)."""
     return pv - load
 
 
@@ -112,8 +112,8 @@ def _run(inp: Inputs, bat: Battery, grid: Grid, soc0: float, strategy: str, orac
     vo = inp.price_import.reindex(inp.index).to_numpy()
     vi = inp.price_export.reindex(inp.index).to_numpy()
 
-    # Bewertung des Ladestands am Ende (Rp./kWh): Überschuss spart später Bezug, Fehlmenge muss
-    # mit Ladeverlust nachgekauft werden. Dieselben Werte nutzt das Optimum in seiner Zielfunktion.
+    # Valuation of the final state of charge (ct/kWh): surplus saves later import, a shortfall must
+    # be bought back with charging losses. The optimum uses the same values in its objective.
     credit, debit = np.mean(vo) * bat.efficiency, np.mean(vo) / bat.efficiency
 
     optimal = None
@@ -129,11 +129,11 @@ def _run(inp: Inputs, bat: Battery, grid: Grid, soc0: float, strategy: str, orac
             setpoint = _rbc(inp.pv_actual[t], inp.load_actual[t], soc, bat)
         elif strategy == "optimal":
             setpoint = optimal.charge[t] - optimal.discharge[t]
-        else:  # MPC mit rollendem Horizont
+        else:  # MPC with rolling horizon
             idx = pd.date_range(now, periods=HORIZON, freq="15min")
-            pv_fc = inp.pv_forecast[t:t + HORIZON].copy()  # reicht einen Tag über das Fenster hinaus
+            pv_fc = inp.pv_forecast[t:t + HORIZON].copy()  # extends one day beyond the window
             load_fc = load_model.forecast(idx, inp.annual_kwh).to_numpy()
-            # Für den aktuellen Zeitschritt ist der Messwert bekannt (wie im Paper: Zustand + Prognose)
+            # For the current time step the measured value is known (as in the paper: state + forecast)
             pv_fc[0] = inp.pv_actual[t]
             load_fc[0] = inp.load_actual[t]
             price_i = oracle_import.view(now, idx)
@@ -148,7 +148,7 @@ def _run(inp: Inputs, bat: Battery, grid: Grid, soc0: float, strategy: str, orac
             out[k][t] = step[k]
 
     energy_cost = float(np.sum(out["import"] * vo - out["export"] * vi) * DT / 100)
-    # Endladestand bewerten, damit Strategien nicht durch Leerfahren der Batterie gewinnen
+    # Value the final state of charge so that strategies do not win by draining the battery
     delta = soc - soc0
     soc_value = float(delta * (credit if delta > 0 else debit) / 100)
     pv_total = float(np.sum(inp.pv_actual) * DT)
@@ -168,7 +168,7 @@ def _run(inp: Inputs, bat: Battery, grid: Grid, soc0: float, strategy: str, orac
 
 
 # ---------------------------------------------------------------------------
-# Öffentliche Funktion
+# Public function
 # ---------------------------------------------------------------------------
 
 def run(req: SimulationRequest) -> dict:
@@ -192,26 +192,26 @@ def run(req: SimulationRequest) -> dict:
     )
     soc0 = bat_cfg.soc_start * bat.capacity_kwh
 
-    # ---------- Zeitfenster ----------
+    # ---------- Time window ----------
     now = pd.Timestamp.now(tz="UTC").floor("15min")
     end = now.tz_convert(TZ).normalize().tz_convert("UTC")
     start = end - pd.Timedelta(days=req.days)
     index = pd.date_range(start, end, freq="15min", inclusive="left")
     extended = pd.date_range(start, end + pd.Timedelta(days=1), freq="15min", inclusive="left")
 
-    # ---------- Wetter & PV ----------
+    # ---------- Weather & PV ----------
     weather, station = meteo.backtest(loc.lat, loc.lon, req.days)
     pv_actual_h = model.predict(weather[["ghi", "temp"]], loc.lat, loc.lon, pv_cfg.kwp)
     pv_fc_h = model.predict(weather[["ghi_fc", "temp_fc"]].set_axis(["ghi", "temp"], axis=1), loc.lat, loc.lon, pv_cfg.kwp)
     pv_actual = _quarters(pv_actual_h, index).to_numpy()
     pv_forecast = _quarters(pv_fc_h, extended).to_numpy()
 
-    # ---------- Tarife ----------
+    # ---------- Tariffs ----------
     fetch_from = (start - pd.Timedelta(days=22)).to_pydatetime()
     fetch_to = (end + pd.Timedelta(days=2)).to_pydatetime()
     price_import = tariffs.ekz_tariff("integrated_400D", fetch_from, fetch_to)
     if price_import.empty:
-        raise RuntimeError("EKZ-Tarif integrated_400D nicht verfügbar")
+        raise RuntimeError("EKZ tariff integrated_400D not available")
     oracle_import = PriceOracle(price_import)
     if req.tariff.feed_in == "spot":
         price_export = tariffs.spot_ch(fetch_from, fetch_to)
@@ -222,11 +222,11 @@ def run(req: SimulationRequest) -> dict:
         oracle_export = None
         export_fixed = req.tariff.feed_in_fixed
 
-    # ---------- Last ----------
+    # ---------- Load ----------
     load_actual = load_model.actual(index, req.household.annual_kwh).to_numpy()
     load_forecast = load_model.forecast(index, req.household.annual_kwh).to_numpy()
 
-    # Ist-Preise im Fenster; fehlende Werte (z. B. energy-charts nicht erreichbar) statistisch ergänzen
+    # Actual prices in the window; fill missing values (e.g. energy-charts unreachable) statistically
     window_import = tariff_forecast.complete(price_import, index, price_import)
     window_export = tariff_forecast.complete(price_export, index, price_export)
     estimated = int(price_import.reindex(index).isna().sum() + price_export.reindex(index).isna().sum())
@@ -273,7 +273,7 @@ def run(req: SimulationRequest) -> dict:
 
 
 def _tariff_days(price_import: pd.Series, price_export: pd.Series, now: pd.Timestamp) -> dict:
-    """Publizierte Tarife der letzten 14 Tage bis Ende der Publikation – für die Börsen-Ansicht."""
+    """Published tariffs of the last 14 days up to the end of publication – for the exchange view."""
     start = (now.tz_convert(TZ).normalize() - pd.Timedelta(days=13)).tz_convert("UTC")
     end = tariffs.published_until(now)
     index = pd.date_range(start, end, freq="15min", inclusive="left")
@@ -289,7 +289,7 @@ def _tariff_days(price_import: pd.Series, price_export: pd.Series, now: pd.Times
 
 def _plan(req: SimulationRequest, model: pv_model.PvModel, bat: Battery, grid: Grid, soc0: float,
           now: pd.Timestamp, price_import: pd.Series, price_export: pd.Series, export_is_fixed: bool) -> dict:
-    """Fahrplan ab jetzt: bis zum Ende der publizierten Tarife, mindestens 24 h."""
+    """Schedule from now: until the end of the published tariffs, at least 24 h."""
     published = tariffs.published_until(now)
     horizon_end = max(published, now + pd.Timedelta(hours=24))
     index = pd.date_range(now, horizon_end, freq="15min", inclusive="left")

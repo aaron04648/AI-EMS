@@ -1,9 +1,9 @@
-"""Tarife: EKZ (Bezug, dynamisch) und Schweizer Day-Ahead-Preis (Einspeisung).
+"""Tariffs: EKZ (import, dynamic) and Swiss day-ahead price (feed-in).
 
-- EKZ-Tarif-API: https://api.tariffs.ekz.ch – integrated_400D = EKZ Energie Dynamisch + Netz 400D
-  + SDL, Stromreserve, Solidarisierte Kosten, Bundesabgaben (15-Minuten-Raster, Rp./kWh).
-  Der dynamische Tarif wird täglich bis 18 Uhr für den Folgetag publiziert.
-- energy-charts.info (Fraunhofer ISE, CC BY 4.0): Day-Ahead-Preis der Gebotszone CH (EUR/MWh).
+- EKZ tariff API: https://api.tariffs.ekz.ch – integrated_400D = EKZ dynamic energy + grid 400D
+  + ancillary services, electricity reserve, socialised costs, federal levies (15 minute grid, ct/kWh).
+  The dynamic tariff is published daily by 18:00 for the following day.
+- energy-charts.info (Fraunhofer ISE, CC BY 4.0): day-ahead price of the CH bidding zone (EUR/MWh).
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ from .http import SourceError, get_json
 
 log = logging.getLogger(__name__)
 
-# Snapshot des Fetchers (ch-prices.json): in Docker/Kubernetes über den Web-Service,
-# lokal direkt aus web/public/data. Schont die gedrosselte energy-charts-API.
+# Snapshot of the fetcher (ch-prices.json): in Docker/Kubernetes via the web service,
+# locally directly from web/public/data. Spares the throttled energy-charts API.
 SNAPSHOT_URL = os.environ.get("SNAPSHOT_URL")
 SNAPSHOT_DIR = Path(__file__).resolve().parents[3] / "web" / "public" / "data"
 
@@ -32,7 +32,7 @@ TZ = "Europe/Zurich"
 
 
 def ekz_tariff(name: str, start: datetime, end: datetime) -> pd.Series:
-    """Viertelstunden-Tarif in Rp./kWh (Index: UTC, Beginn der Viertelstunde)."""
+    """Quarter-hour tariff in ct/kWh (index: UTC, start of the quarter hour)."""
     data = get_json(
         EKZ,
         {"tariff_name": name,
@@ -59,12 +59,12 @@ def _snapshot() -> dict | None:
         file = SNAPSHOT_DIR / "ch-prices.json"
         return json.loads(file.read_text()) if file.exists() else None
     except (SourceError, ValueError, OSError) as err:
-        log.info("Kein Preis-Snapshot verfügbar: %s", err)
+        log.info("No price snapshot available: %s", err)
         return None
 
 
 def spot_ch(start: datetime, end: datetime) -> pd.Series:
-    """Day-Ahead CH in Rp./kWh, auf 15 Minuten aufgefüllt (Index: UTC)."""
+    """Day-ahead CH in ct/kWh, forward-filled to 15 minutes (index: UTC)."""
     snap = _snapshot()
     snap_series = None
     if snap:
@@ -86,8 +86,8 @@ def spot_ch(start: datetime, end: datetime) -> pd.Series:
     except SourceError:
         if snap_series is None:
             raise
-        # Lieber ein älterer Snapshot als gar keine Daten – Lücken füllt die statistische Preisprognose
-        log.warning("energy-charts nicht erreichbar – verwende Snapshot bis %s", snap_series.index.max())
+        # Better an older snapshot than no data at all – gaps are filled by the statistical price forecast
+        log.warning("energy-charts unreachable – using snapshot until %s", snap_series.index.max())
         return snap_series
     s = pd.Series(data["price"], index=pd.to_datetime(data["unix_seconds"], unit="s", utc=True), dtype=float)
     s = s.dropna() / 10 * EUR_CHF
@@ -95,7 +95,7 @@ def spot_ch(start: datetime, end: datetime) -> pd.Series:
 
 
 def published_until(now_utc: pd.Timestamp) -> pd.Timestamp:
-    """Bis wann der dynamische Tarif zum Zeitpunkt `now` bekannt ist (EKZ publiziert bis 18 Uhr)."""
+    """Until when the dynamic tariff is known at time `now` (EKZ publishes by 18:00)."""
     local = now_utc.tz_convert(TZ)
     end_of_day = (local + pd.Timedelta(days=1)).normalize()
     if local.hour >= 18:

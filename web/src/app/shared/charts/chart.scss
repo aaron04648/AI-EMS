@@ -1,7 +1,7 @@
 @use 'tokens' as *;
 
-// Chart-Chrome nach der Dataviz-Referenz: Haarlinien, ruhige Achsen,
-// Text in Text-Farben – nur die Daten tragen Farbe.
+// Chart chrome following the dataviz reference: hairlines, calm axes,
+// text in text colours – only the data carries colour.
 :host {
   display: block;
   position: relative;
@@ -11,7 +11,7 @@
   color: $color-ink;
 }
 
-// ---------- Legende ----------
+// ---------- Legend ----------
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -36,7 +36,7 @@
   border-radius: 3px;
 }
 
-// ---------- Linien-/Flächendiagramm ----------
+// ---------- Line/area chart ----------
 .plot {
   position: relative;
   width: 100%;
@@ -91,7 +91,7 @@
   stroke: none;
 }
 
-// Gestapelte Flächen: kräftiger, damit die Anteile lesbar bleiben
+// Stacked areas: stronger so that the shares stay readable
 .area--stacked {
   opacity: 0.75;
 }
@@ -155,7 +155,7 @@
   color: $color-gray-500;
 }
 
-// ---------- Horizontale Balken ----------
+// ---------- Horizontal bars ----------
 .hbars {
   list-style: none;
   display: flex;
@@ -214,7 +214,7 @@
   transform: translateY(4px);
 }
 
-// ---------- Vertikale Säulen ----------
+// ---------- Vertical columns ----------
 .vbars {
   display: flex;
   align-items: stretch;

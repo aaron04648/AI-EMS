@@ -1,4 +1,4 @@
-"""Ortssuche über die swisstopo-Suche (api3.geo.admin.ch) – Adressen, PLZ, Ortschaften."""
+"""Location search via the swisstopo search (api3.geo.admin.ch) – addresses, postcodes, localities."""
 
 from __future__ import annotations
 

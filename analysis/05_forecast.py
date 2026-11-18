@@ -1,19 +1,19 @@
-"""Schritt 05 – Rollende 24h-Prognose als JSON für das Analyse-Dashboard der Website.
+"""Step 05 – rolling 24h forecast as JSON for the analysis dashboard of the website.
 
-Ab dem aktuellen Zeitpunkt (Viertelstunde) wird der CH-Day-Ahead-Preis für die nächsten 24 h simuliert.
-Das Modell (Parameter aus Schritt 04) kennt nur Ist-Preise bis jetzt; Eingänge sind die Netzbetreiber- und
-Wetterprognosen sowie bereits publizierte Day-Ahead-Preise (Lags ≥ 24 h). Für die 7 Tage davor gibt es
-zum Vergleich die Prognose eines Modells, das nur Daten vor diesen 7 Tagen kennt.
+From the current point in time (quarter hour) the CH day-ahead price is simulated for the next 24 h.
+The model (parameters from step 04) only knows actual prices up to now; inputs are the grid operator and
+weather forecasts as well as already published day-ahead prices (lags ≥ 24 h). For the 7 days before,
+there is, for comparison, the forecast of a model that only knows data before these 7 days.
 
-Ausgabe: web/public/forecast/forecast.json
-  hourly  – Ist (bis jetzt) und Prognose, stündlich, jetzt − 7 Tage … jetzt + 30 h
-  reasons – SHAP-Beiträge je Treiber und Stunde für die Prognosestunden
+Output: web/public/forecast/forecast.json
+  hourly  – actual (up to now) and forecast, hourly, now − 7 days … now + 30 h
+  reasons – SHAP contributions per driver and hour for the forecast hours
 
-Der CH-Day-Ahead-Preis wird auf energy-charts stündlich publiziert; das Dashboard zeigt jede Stunde als
-vier gleiche Viertelstunden. Der Puffer von 6 h über die 24 h hinaus hält das Dashboard nach einem Lauf
-noch einige Stunden aktuell.
+The CH day-ahead price is published hourly on energy-charts; the dashboard shows each hour as
+four identical quarter hours. The buffer of 6 h beyond the 24 h keeps the dashboard current for
+a few more hours after a run.
 
-Aufruf:  .venv/bin/python 01_fetch_data.py   (aktuelle Daten)
+Usage:   .venv/bin/python 01_fetch_data.py   (current data)
          .venv/bin/python 05_forecast.py [--now "YYYY-MM-DD HH:MM"]
 """
 
@@ -32,20 +32,20 @@ from features import build, driver_group, feature_columns
 
 TARGET_FILE = ROOT.parent / "web" / "public" / "forecast" / "forecast.json"
 HISTORY = pd.Timedelta(days=7)
-HORIZON = pd.Timedelta(hours=30)  # 24 h + Puffer
+HORIZON = pd.Timedelta(hours=30)  # 24 h + buffer
 BASE = "lag_ch_24"
 
-# Kurze Namen für das Dashboard
+# Short names for the dashboard
 LABELS = {
-    "Last/Residuallast-Prognose": "Residuallast",
-    "Preisniveau (Lags CH)": "Preisniveau",
-    "Nachbarpreise (Lags)": "Nachbarländer",
-    "Solar-Prognose": "Solar",
-    "Wind-Prognose": "Wind",
-    "Wasserkraft & Austausch (Lags)": "Wasser & Austausch",
-    "Kalender": "Kalender",
-    "Wetter sonstiges": "Wetter",
-    "Sonstiges": "Übrige",
+    "Load/residual load forecast": "Residual load",
+    "Price level (lags CH)": "Price level",
+    "Neighbouring prices (lags)": "Neighbouring countries",
+    "Solar forecast": "Solar",
+    "Wind forecast": "Wind",
+    "Hydro & exchange (lags)": "Hydro & exchange",
+    "Calendar": "Calendar",
+    "Other weather": "Weather",
+    "Other": "Other",
 }
 
 
@@ -68,10 +68,10 @@ def main() -> None:
     now = pd.Timestamp(sys.argv[sys.argv.index("--now") + 1], tz=TZ) if "--now" in sys.argv \
         else pd.Timestamp.now(tz=TZ)
     now = now.floor("15min").tz_convert("UTC")
-    hour = now.floor("h")  # die angebrochene Stunde gehört zur Prognose
+    hour = now.floor("h")  # the current partial hour belongs to the forecast
     end = hour + HORIZON
 
-    # Zeilen bis zum Ende des Horizonts anlegen, auch wo noch keine Messwerte existieren
+    # Create rows up to the end of the horizon, even where no measurements exist yet
     df = processed_hourly()
     df = df.reindex(pd.date_range(df.index.min(), max(df.index.max(), end), freq="1h"))
     X = build(df)
@@ -79,7 +79,7 @@ def main() -> None:
 
     future = X[(X.index >= hour) & (X.index < end)]
     if future[BASE].notna().sum() < 20:
-        raise SystemExit("Zu wenige Eingangsdaten für die nächsten 24 h – zuerst 01_fetch_data.py ausführen.")
+        raise SystemExit("Too little input data for the next 24 h – run 01_fetch_data.py first.")
 
     past = X[(X.index >= hour - HISTORY) & (X.index < hour)]
     m_past = fit_before(X, cols, params, hour - HISTORY)
@@ -90,13 +90,13 @@ def main() -> None:
     ])
     actual = X["y"].reindex(pred.index).where(pred.index < hour)
 
-    # Gründe je Prognosestunde (SHAP, zu Treibern gruppiert)
+    # Reasons per forecast hour (SHAP, grouped into drivers)
     sv = pd.DataFrame(shap.TreeExplainer(m_now).shap_values(future[cols]), index=future.index, columns=cols)
-    grouped = sv.T.groupby(lambda f: LABELS.get(driver_group(f), "Übrige")).sum().T
-    top = [g for g in grouped.abs().sum().sort_values(ascending=False).index if g != "Übrige"][:6]
+    grouped = sv.T.groupby(lambda f: LABELS.get(driver_group(f), "Other")).sum().T
+    top = [g for g in grouped.abs().sum().sort_values(ascending=False).index if g != "Other"][:6]
     rest = grouped.drop(columns=top).sum(axis=1)
 
-    metrics = pd.read_csv(OUT / "model" / "metrics.csv").set_index("Modell")
+    metrics = pd.read_csv(OUT / "model" / "metrics.csv").set_index("Model")
     hist = pd.concat([actual, pred], axis=1).dropna()
     recent = float(100 * (hist.iloc[:, 0] - hist.iloc[:, 1]).abs().mean() / hist.iloc[:, 0].abs().mean())
 
@@ -105,20 +105,20 @@ def main() -> None:
         "now": int(now.timestamp()),
         "accuracy": {
             "nmae": round(float(metrics.loc["LightGBM", "nMAE_%"]), 2),
-            "persistenceNmae": round(float(metrics.loc["Persistenz 24 h", "nMAE_%"]), 2),
+            "persistenceNmae": round(float(metrics.loc["Persistence 24 h", "nMAE_%"]), 2),
             "recentNmae": round(recent, 2),
         },
         "hourly": {"t": unix(pred.index), "actual": nums(actual), "forecast": nums(pred)},
         "reasons": {
             "t": unix(future.index),
-            "groups": top + ["Übrige"],
-            "contrib": {**{g: nums(grouped[g]) for g in top}, "Übrige": nums(rest)},
+            "groups": top + ["Other"],
+            "contrib": {**{g: nums(grouped[g]) for g in top}, "Other": nums(rest)},
         },
     }
     TARGET_FILE.parent.mkdir(parents=True, exist_ok=True)
     TARGET_FILE.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     window = pred[(pred.index >= hour) & (pred.index < hour + pd.Timedelta(hours=24))]
-    print(f"→ {TARGET_FILE}  (ab {now.tz_convert(TZ):%d.%m. %H:%M}, Ø 24 h {window.mean():.1f} EUR/MWh)")
+    print(f"→ {TARGET_FILE}  (from {now.tz_convert(TZ):%d.%m. %H:%M}, avg. 24 h {window.mean():.1f} EUR/MWh)")
 
 
 if __name__ == "__main__":

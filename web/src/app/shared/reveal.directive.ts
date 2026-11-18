@@ -12,17 +12,17 @@ import { isPlatformBrowser } from '@angular/common';
 export type RevealVariant = 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'scale';
 
 /**
- * Apple-ähnliche Scroll-Animationen auf Basis der Intersection Observer API.
+ * Apple-like scroll animations based on the Intersection Observer API.
  *
- * Verwendung im Template:
- *   <div appReveal>…</div>                          (Slide-up, Standard)
+ * Usage in the template:
+ *   <div appReveal>…</div>                          (slide-up, default)
  *   <div appReveal="fade">…</div>
  *   <div appReveal="slide-up" [revealDelay]="150">…</div>
  *
- * Beim Prerendering bleibt das Element unangetastet – der Inhalt steht damit
- * sichtbar im ausgelieferten HTML (wichtig für Suchmaschinen und den Largest
- * Contentful Paint). Erst im Browser werden Elemente unterhalb des sichtbaren
- * Bereichs für die Einblend-Animation vorbereitet.
+ * During prerendering the element stays untouched – so the content is
+ * visible in the delivered HTML (important for search engines and the Largest
+ * Contentful Paint). Only in the browser are elements below the visible
+ * area prepared for the fade-in animation.
  */
 @Directive({
   selector: '[appReveal]',
@@ -45,8 +45,8 @@ export class RevealDirective implements OnInit, OnDestroy {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const alreadyVisible = element.getBoundingClientRect().top < window.innerHeight;
 
-    // Bereits sichtbare Inhalte nicht nachträglich ausblenden – das würde nach
-    // dem Hydrieren des vorgerenderten HTML sichtbar flackern.
+    // Do not hide already visible content afterwards – that would visibly flicker
+    // after hydrating the prerendered HTML.
     if (prefersReducedMotion || typeof IntersectionObserver === 'undefined' || alreadyVisible) {
       return;
     }

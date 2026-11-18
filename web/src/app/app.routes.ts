@@ -3,8 +3,8 @@ import { SiteLayout } from './layout/site-layout';
 
 export const routes: Routes = [
   {
-    path: 'rechner',
-    title: 'Rechner – AI-EMS',
+    path: 'calculator',
+    title: 'Calculator – AI-EMS',
     loadComponent: () => import('./calculator/calculator').then((m) => m.Calculator),
   },
   {
@@ -13,12 +13,12 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        title: 'AI-EMS – Dynamische Stromtarife verstehen',
+        title: 'AI-EMS – Understanding dynamic electricity tariffs',
         loadComponent: () => import('./pages/home/home').then((m) => m.Home),
       },
       {
-        path: 'analyse',
-        title: 'Analyse – AI-EMS',
+        path: 'analysis',
+        title: 'Analysis – AI-EMS',
         loadComponent: () => import('./pages/analysis/analysis').then((m) => m.Analysis),
       },
     ],

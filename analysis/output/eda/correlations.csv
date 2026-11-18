@@ -1,0 +1,23 @@
+Driver,Pearson r,Spearman ρ,n
+Price AT,0.845,0.898,24646
+Price IT-North,0.807,0.798,24646
+Price DE,0.789,0.780,24646
+Price FR,0.762,0.712,24646
+Hard coal DE,0.603,0.679,24621
+Gas DE,0.572,0.661,24621
+Residual load DE+CH,0.570,0.528,24619
+Residual load DE,0.553,0.511,24621
+Residual load CH,0.496,0.468,24619
+RE share of load DE,-0.517,-0.458,24621
+Wind+solar DE,-0.371,-0.324,24621
+Load DE,0.317,0.320,24621
+RE share of load CH,-0.305,-0.314,24619
+Temperature Zurich (forecast),-0.256,-0.285,24202
+Run-of-river CH,-0.226,-0.280,24619
+Solar CH,-0.451,-0.280,24619
+Solar DE,-0.442,-0.255,24621
+Reservoir hydro CH,0.191,0.170,24619
+Load CH,0.122,0.156,24619
+Nuclear CH,0.125,0.112,24619
+Net import CH,0.028,0.053,24646
+Wind onshore DE,0.011,0.010,24621

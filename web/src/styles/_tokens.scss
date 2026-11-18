@@ -1,42 +1,42 @@
 // =============================================================
-// AI-EMS Design-System – Tokens (abgeleitet von NOVEXA)
-// Apple-esque: Minimalismus, Whitespace, grosse Typografie
+// AI-EMS design system – tokens (derived from NOVEXA)
+// Apple-esque: minimalism, whitespace, large typography
 // =============================================================
 
-// ---------- Farben ----------
-// Feste Farben – unabhängig vom Theme (z. B. weisse Schrift auf Blau, Kontrast-Sections)
+// ---------- Colours ----------
+// Fixed colours – independent of the theme (e.g. white text on blue, contrast sections)
 $color-black:        #000000;
 $color-white:        #ffffff;
 $color-accent-hover: #0077ed;
-$color-accent-dark:  #2997ff;   // Akzent auf dunklem Grund
+$color-accent-dark:  #2997ff;   // accent on dark background
 
-// Theme-Farben – Werte für Hell/Dunkel stehen in styles.scss (:root / [data-theme='dark'])
-$color-ink:          var(--ink);         // Primärer Text
-$color-offwhite:     var(--surface-2);   // Section-Hintergrund
-$color-gray-100:     var(--line-soft);   // Dezente Flächen / Linien
-$color-gray-200:     var(--line);        // Rahmen
-$color-gray-400:     var(--muted-2);     // Sekundärer Text
-$color-gray-500:     var(--muted);       // Tertiärer Text
-$color-accent:       var(--accent);      // Akzentfarbe (Blau)
-$surface:            var(--surface);         // Seitenhintergrund
-$surface-raised:     var(--surface-raised);  // Karten, Eingabefelder
-$glass:              var(--glass);           // halbtransparente Leisten (Header)
-$glass-strong:       var(--glass-strong);    // Popover, Kartenlabels
+// Theme colours – values for light/dark are in styles.scss (:root / [data-theme='dark'])
+$color-ink:          var(--ink);         // primary text
+$color-offwhite:     var(--surface-2);   // section background
+$color-gray-100:     var(--line-soft);   // subtle surfaces / lines
+$color-gray-200:     var(--line);        // borders
+$color-gray-400:     var(--muted-2);     // secondary text
+$color-gray-500:     var(--muted);       // tertiary text
+$color-accent:       var(--accent);      // accent colour (blue)
+$surface:            var(--surface);         // page background
+$surface-raised:     var(--surface-raised);  // cards, input fields
+$glass:              var(--glass);           // semi-transparent bars (header)
+$glass-strong:       var(--glass-strong);    // popovers, map labels
 
-// ---------- Typografie ----------
+// ---------- Typography ----------
 $font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
   'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-$text-xs:   0.75rem;    // 12px – Labels, Footnotes
-$text-sm:   0.875rem;   // 14px – Sekundärtext, Navigation
-$text-base: 1.0625rem;  // 17px – Fliesstext (Apple-Standard)
-$text-lg:   1.1875rem;  // 19px – Lead-Text
-$text-xl:   1.375rem;   // 22px – Karten-Titel
-$text-2xl:  1.75rem;    // 28px – Sub-Headlines
-$text-3xl:  2.25rem;    // 36px – Section-Headlines klein
-$text-4xl:  3rem;       // 48px – Section-Headlines
-$text-5xl:  3.75rem;    // 60px – Grosse Headlines
-$text-6xl:  clamp(2.75rem, 7vw, 5.25rem); // Hero-Headlines, fluid
+$text-xs:   0.75rem;    // 12px – labels, footnotes
+$text-sm:   0.875rem;   // 14px – secondary text, navigation
+$text-base: 1.0625rem;  // 17px – body text (Apple standard)
+$text-lg:   1.1875rem;  // 19px – lead text
+$text-xl:   1.375rem;   // 22px – card titles
+$text-2xl:  1.75rem;    // 28px – sub-headlines
+$text-3xl:  2.25rem;    // 36px – section headlines small
+$text-4xl:  3rem;       // 48px – section headlines
+$text-5xl:  3.75rem;    // 60px – large headlines
+$text-6xl:  clamp(2.75rem, 7vw, 5.25rem); // hero headlines, fluid
 
 $font-weight-regular:  400;
 $font-weight-medium:   500;
@@ -65,11 +65,11 @@ $spacing-10: 5rem;     // 80px
 $spacing-11: 6.5rem;   // 104px
 $spacing-12: 8rem;     // 128px
 
-// ---------- Radien & Schatten ----------
+// ---------- Radii & shadows ----------
 $radius-sm:   0.5rem;
-$radius-md:   1.125rem;   // Apple-Karten
+$radius-md:   1.125rem;   // Apple cards
 $radius-lg:   1.75rem;
-$radius-full: 980px;      // Pill-Buttons
+$radius-full: 980px;      // pill buttons
 
 $shadow-card:  var(--shadow-card);
 $shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);

@@ -19,8 +19,8 @@ export interface DriverSeries {
 const PAD = { top: 12, right: 12, bottom: 28, left: 48 };
 
 /**
- * Divergierende, gestapelte Säulen: Beitrag je Treiber und Stunde (positiv nach oben, negativ nach unten).
- * Gleiche Achsen- und Tooltip-Gestaltung wie die übrigen Diagramme.
+ * Diverging, stacked columns: contribution per driver and hour (positive upwards, negative downwards).
+ * Same axis and tooltip design as the other charts.
  */
 @Component({
   selector: 'app-driver-chart',
@@ -97,7 +97,7 @@ export class DriverChart {
   readonly xFormat = input<(v: number) => string>((v) => String(v));
   readonly unit = input('');
   readonly height = input(300);
-  readonly ariaLabel = input('Beiträge je Treiber');
+  readonly ariaLabel = input('Contributions per driver');
 
   protected readonly pad = PAD;
   protected readonly width = signal(640);
@@ -118,7 +118,7 @@ export class DriverChart {
   protected readonly slot = computed(() => this.innerW() / Math.max(1, this.x().length));
   protected readonly barW = computed(() => Math.max(3, Math.min(28, this.slot() - 4)));
 
-  /** Summe der positiven bzw. negativen Beiträge je Stunde */
+  /** Sum of the positive and negative contributions per hour */
   private readonly stacks = computed(() =>
     this.x().map((_, i) => {
       let pos = 0;
@@ -170,7 +170,7 @@ export class DriverChart {
         const to = from + v;
         if (v > 0) up = to;
         else down = to;
-        // 2px Abstand zwischen den Segmenten
+        // 2px gap between the segments
         const y = sy(Math.max(from, to));
         const h = Math.max(0, Math.abs(sy(from) - sy(to)) - 2);
         segs.push({ name: s.name, color: s.color, y: v > 0 ? y + 2 : y, h });

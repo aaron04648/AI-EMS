@@ -1,6 +1,6 @@
 @use 'tokens' as *;
 
-// Zusätzliche Treiberfarben (Slots 6–8 der validierten Palette), je Modus eigene Stufen
+// Additional driver colours (slots 6–8 of the validated palette), separate shades per mode
 :host {
   display: block;
   --s6: #008300;
@@ -15,7 +15,7 @@
   --forecast-band: rgba(57, 135, 229, 0.12);
 }
 
-// ---------- Ein Bildschirm: links Kennzahlen + Grafik, rechts die Viertelstunden-Liste ----------
+// ---------- One screen: KPIs + chart on the left, quarter-hour list on the right ----------
 .dash {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -45,7 +45,7 @@
   box-shadow: $shadow-card;
 }
 
-// ---------- Kennzahlen-Leiste ----------
+// ---------- KPI bar ----------
 .kpis {
   @extend .panel;
   display: grid;
@@ -160,7 +160,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-// ---------- Grafikfläche (füllt den Rest) ----------
+// ---------- Chart area (fills the rest) ----------
 .stage {
   @extend .panel;
   min-height: 0;
@@ -176,7 +176,7 @@
   }
 }
 
-// ---------- Liste rechts ----------
+// ---------- List on the right ----------
 .dash__list {
   @extend .panel;
   display: flex;

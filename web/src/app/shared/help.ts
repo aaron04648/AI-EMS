@@ -1,10 +1,10 @@
 import { Component, ElementRef, HostListener, inject, input, signal } from '@angular/core';
 
 /**
- * Kleiner „?“-Knopf mit Erklärung im Popover – statt Fliesstext neben Grafiken.
+ * Small "?" button with an explanation in a popover – instead of body text next to charts.
  *
- *   <app-help>Erklärung …</app-help>
- *   <app-help align="right">…</app-help>   (Popover nach links öffnen, z. B. am rechten Rand)
+ *   <app-help>Explanation …</app-help>
+ *   <app-help align="right">…</app-help>   (open popover to the left, e.g. at the right edge)
  */
 @Component({
   selector: 'app-help',
@@ -84,7 +84,7 @@ import { Component, ElementRef, HostListener, inject, input, signal } from '@ang
   `,
 })
 export class Help {
-  readonly label = input('Erklärung anzeigen');
+  readonly label = input('Show explanation');
   readonly align = input<'left' | 'right'>('left');
   protected readonly open = signal(false);
   private readonly host = inject(ElementRef<HTMLElement>);

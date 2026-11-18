@@ -28,11 +28,11 @@ interface WeatherGrid {
 type Layer = 'cloud' | 'radiation' | 'precip';
 type Rgba = [number, number, number, number];
 
-/** Farbskalen: [Wert, r, g, b, Deckkraft] – zwischen den Stützstellen linear interpoliert */
+/** Colour scales: [value, r, g, b, opacity] – linearly interpolated between the stops */
 const SCALES: Record<Layer, { stops: number[][]; unit: string; label: string; ticks: number[] }> = {
   cloud: {
-    // Wie ein Satellitenbild: Wolken hell und deckend über abgedunkelter Karte
-    label: 'Bewölkung',
+    // Like a satellite image: clouds bright and opaque over a darkened map
+    label: 'Cloud cover',
     unit: '%',
     ticks: [0, 50, 100],
     stops: [
@@ -45,7 +45,7 @@ const SCALES: Record<Layer, { stops: number[][]; unit: string; label: string; ti
     ],
   },
   radiation: {
-    label: 'Sonneneinstrahlung',
+    label: 'Solar irradiance',
     unit: 'W/m²',
     ticks: [0, 400, 800],
     stops: [
@@ -57,7 +57,7 @@ const SCALES: Record<Layer, { stops: number[][]; unit: string; label: string; ti
     ],
   },
   precip: {
-    label: 'Niederschlag',
+    label: 'Precipitation',
     unit: 'mm/h',
     ticks: [0.1, 2, 10],
     stops: [
@@ -86,7 +86,7 @@ function colorOf(layer: Layer, v: number): Rgba {
   return [last[1], last[2], last[3], last[4]];
 }
 
-/** Bilineare Interpolation eines Gitterwerts an (Zeile, Spalte) in Gitterkoordinaten */
+/** Bilinear interpolation of a grid value at (row, column) in grid coordinates */
 function sample(field: (number | null)[][], r: number, c: number): number {
   const r0 = Math.max(0, Math.min(field.length - 1, Math.floor(r)));
   const c0 = Math.max(0, Math.min(field[0].length - 1, Math.floor(c)));
@@ -108,29 +108,29 @@ const UPSAMPLE = 8;
   imports: [Help],
   template: `
     <div class="wm" [class.wm--clouds]="layer() === 'cloud'">
-      <div #map class="wm__map" role="img" [attr.aria-label]="'Wetterkarte: ' + scale().label"></div>
+      <div #map class="wm__map" role="img" [attr.aria-label]="'Weather map: ' + scale().label"></div>
 
-      <!-- Ebenen -->
-      <div class="wm__layers" role="group" aria-label="Kartenebene">
+      <!-- Layers -->
+      <div class="wm__layers" role="group" aria-label="Map layer">
         @for (l of layers; track l.key) {
           <button type="button" [class.is-active]="layer() === l.key" (click)="layer.set(l.key)">{{ l.label }}</button>
         }
       </div>
 
-      <!-- Werte an der Adresse -->
+      <!-- Values at the address -->
       @if (here(); as h) {
         <div class="wm__here">
           <span class="wm__here-title">
             {{ place().label }}
             <app-help align="right">
-              Modellwerte von MeteoSwiss (ICON-CH2, 2 km) an Ihrer Adresse für die gewählte Stunde.
-              PV: Prognose Ihrer Anlage aus dem PV-Modell (nur für Stunden im Fahrplan).
+              MeteoSwiss model values (ICON-CH2, 2 km) at your address for the selected hour.
+              PV: forecast of your system from the PV model (only for hours in the schedule).
             </app-help>
           </span>
           <dl>
-            <div><dt>Wolken</dt><dd>{{ fmt(h.cloud) }} %</dd></div>
-            <div><dt>Sonne</dt><dd>{{ fmt(h.radiation) }} W/m²</dd></div>
-            <div><dt>Regen</dt><dd>{{ fmt(h.precip, 1) }} mm/h</dd></div>
+            <div><dt>Clouds</dt><dd>{{ fmt(h.cloud) }} %</dd></div>
+            <div><dt>Sun</dt><dd>{{ fmt(h.radiation) }} W/m²</dd></div>
+            <div><dt>Rain</dt><dd>{{ fmt(h.precip, 1) }} mm/h</dd></div>
             @if (h.pv !== null) {
               <div class="wm__pv"><dt>PV</dt><dd>{{ fmt(h.pv, 1) }} kW</dd></div>
             }
@@ -138,7 +138,7 @@ const UPSAMPLE = 8;
         </div>
       }
 
-      <!-- Legende -->
+      <!-- Legend -->
       <div class="wm__legend">
         <span class="wm__legend-label">{{ scale().label }} ({{ scale().unit }})</span>
         <span class="wm__legend-bar" [style.background]="gradient()"></span>
@@ -152,14 +152,14 @@ const UPSAMPLE = 8;
       @if (error()) {
         <div class="wm__state">{{ error() }}</div>
       } @else if (!grid()) {
-        <div class="wm__state">Wetterdaten werden geladen …</div>
+        <div class="wm__state">Loading weather data …</div>
       }
     </div>
 
-    <!-- Zeitachse -->
+    <!-- Timeline -->
     @if (grid(); as g) {
       <div class="wm__time">
-        <button type="button" class="wm__play" [attr.aria-label]="playing() ? 'Pause' : 'Abspielen'" (click)="toggle()">
+        <button type="button" class="wm__play" [attr.aria-label]="playing() ? 'Pause' : 'Play'" (click)="toggle()">
           @if (playing()) {
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1" /><rect x="9.5" y="2" width="3.5" height="12" rx="1" /></svg>
           } @else {
@@ -172,13 +172,13 @@ const UPSAMPLE = 8;
           [max]="g.times.length - 1"
           step="1"
           [value]="frame()"
-          aria-label="Zeitpunkt"
+          aria-label="Point in time"
           (input)="seek($event)"
         />
         <span class="wm__stamp">
           <strong>{{ formatDayTime(g.times[frame()]) }}</strong>
           <span class="wm__badge" [class.wm__badge--past]="g.times[frame()] < g.now">
-            {{ g.times[frame()] < g.now ? 'Analyse' : g.times[frame()] === g.now ? 'Jetzt' : 'Prognose' }}
+            {{ g.times[frame()] < g.now ? 'Analysis' : g.times[frame()] === g.now ? 'Now' : 'Forecast' }}
           </span>
         </span>
       </div>
@@ -188,15 +188,15 @@ const UPSAMPLE = 8;
 })
 export class WeatherMap implements OnDestroy {
   readonly place = input.required<Place>();
-  /** PV-Prognose der Anlage (kW, 15-min-Raster) – optional, für die Anzeige an der Adresse */
+  /** PV forecast of the system (kW, 15 min grid) – optional, for display at the address */
   readonly pv = input<{ start: number; step: number; values: number[] } | null>(null);
 
   protected readonly fmt = fmt;
   protected readonly formatDayTime = formatDayTime;
   protected readonly layers: { key: Layer; label: string }[] = [
-    { key: 'cloud', label: 'Wolken' },
-    { key: 'radiation', label: 'Sonne' },
-    { key: 'precip', label: 'Niederschlag' },
+    { key: 'cloud', label: 'Clouds' },
+    { key: 'radiation', label: 'Sun' },
+    { key: 'precip', label: 'Precipitation' },
   ];
 
   protected readonly grid = signal<WeatherGrid | null>(null);
@@ -214,7 +214,7 @@ export class WeatherMap implements OnDestroy {
       .join(', ')})`;
   });
 
-  /** Werte an der Adresse (bilinear aus dem Gitter) */
+  /** Values at the address (bilinear from the grid) */
   protected readonly here = computed(() => {
     const g = this.grid();
     if (!g) return null;
@@ -226,7 +226,7 @@ export class WeatherMap implements OnDestroy {
     let pv: number | null = null;
     const series = this.pv();
     if (series) {
-      // Stundenmittel der Viertelstunden in der Stunde vor dem Zeitstempel (soweit im Fahrplan)
+      // Hourly mean of the quarter hours in the hour before the timestamp (as far as in the schedule)
       const values = series.values.filter((_, k) => {
         const qt = series.start + k * series.step;
         return qt >= t - 3600 && qt < t;
@@ -254,7 +254,7 @@ export class WeatherMap implements OnDestroy {
       void this.load();
     });
 
-    // Overlay neu zeichnen, wenn Daten, Ebene oder Zeitpunkt wechseln
+    // Redraw the overlay when data, layer or point in time change
     effect(() => {
       const g = this.grid();
       const layer = this.layer();
@@ -262,7 +262,7 @@ export class WeatherMap implements OnDestroy {
       if (g && this.map) this.draw(g, layer, frame);
     });
 
-    // Marker folgt der Adresse
+    // Marker follows the address
     effect(() => {
       const p = this.place();
       if (this.marker) {
@@ -291,7 +291,7 @@ export class WeatherMap implements OnDestroy {
       attributionControl: true,
     });
     L.tileLayer(TILES, {
-      attribution: '© <a href="https://www.swisstopo.admin.ch" target="_blank" rel="noopener">swisstopo</a> · Wetter: MeteoSwiss ICON-CH2',
+      attribution: '© <a href="https://www.swisstopo.admin.ch" target="_blank" rel="noopener">swisstopo</a> · Weather: MeteoSwiss ICON-CH2',
       maxZoom: 12,
     }).addTo(this.map);
     this.marker = L.circleMarker([p.lat, p.lon], {
@@ -303,14 +303,14 @@ export class WeatherMap implements OnDestroy {
     })
       .bindTooltip(p.label, { direction: 'top', offset: [0, -8] })
       .addTo(this.map);
-    // Flex-Layout: Grösse nach dem ersten Layout neu bestimmen
+    // Flex layout: determine size again after the first layout
     setTimeout(() => this.map?.invalidateSize(), 50);
   }
 
   private async load(): Promise<void> {
     try {
       const res = await fetch('api/weather-map');
-      if (!res.ok) throw new Error(`Wetterdaten nicht verfügbar (HTTP ${res.status})`);
+      if (!res.ok) throw new Error(`Weather data not available (HTTP ${res.status})`);
       const g: WeatherGrid = await res.json();
       const nowIdx = Math.max(0, g.times.indexOf(g.now));
       this.frame.set(nowIdx);
@@ -338,10 +338,10 @@ export class WeatherMap implements OnDestroy {
     this.canvas.height = h;
     const ctx = this.canvas.getContext('2d')!;
     const img = ctx.createImageData(w, h);
-    // Ränder weich ausblenden, damit das Gitter nicht als Rechteck sichtbar ist
+    // Fade out the edges softly so that the grid is not visible as a rectangle
     const fade = UPSAMPLE * 1.5;
     for (let y = 0; y < h; y++) {
-      // Canvas-Zeile 0 = Norden; Gitterzeile 0 = Süden
+      // Canvas row 0 = north; grid row 0 = south
       const r = (h - 1 - y) / UPSAMPLE;
       const fy = Math.min(1, y / fade, (h - 1 - y) / fade);
       for (let x = 0; x < w; x++) {

@@ -1,8 +1,8 @@
-"""Statistische Preisprognose für Zeiten, deren Tarif noch nicht publiziert ist.
+"""Statistical price forecast for times whose tariff has not been published yet.
 
-Methode: Mittelwert derselben Viertelstunde (Schweizer Lokalzeit) über die letzten 14
-verfügbaren Tage, getrennt nach Werktag und Wochenende. Liegt für eine Kombination nichts
-vor, wird auf das Mittel aller Tage zurückgegriffen.
+Method: mean of the same quarter hour (Swiss local time) over the last 14
+available days, separately for weekday and weekend. If there is nothing for a combination,
+the mean of all days is used as a fallback.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ def _key(index: pd.DatetimeIndex) -> pd.MultiIndex:
 
 
 def profile(history: pd.Series, days: int = 14) -> tuple[pd.Series, pd.Series]:
-    """(Profil je [Wochenende, Viertelstunde], Profil je Viertelstunde) aus der Historie."""
+    """(Profile per [weekend, quarter hour], profile per quarter hour) from the history."""
     recent = history[history.index >= history.index.max() - pd.Timedelta(days=days)]
     by_type = recent.groupby(_key(recent.index)).mean()
     local = recent.index.tz_convert(TZ)
@@ -30,7 +30,7 @@ def profile(history: pd.Series, days: int = 14) -> tuple[pd.Series, pd.Series]:
 
 
 def complete(known: pd.Series, index: pd.DatetimeIndex, history: pd.Series) -> pd.Series:
-    """Bekannte Preise übernehmen, Lücken mit dem statistischen Profil füllen."""
+    """Take over known prices, fill gaps with the statistical profile."""
     out = known.reindex(index)
     missing = out.isna()
     if missing.any():

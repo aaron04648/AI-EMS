@@ -1,20 +1,20 @@
-/** Zentrale Angaben zur Seite – Navigation, Mitwirkende, Repository. */
+/** Central site information – navigation, contributors, repository. */
 export const SITE = {
   name: 'AI-EMS',
-  claim: 'Strompreise verstehen. Verbrauch verschieben. Geld sparen.',
+  claim: 'Understand electricity prices. Shift consumption. Save money.',
   repo: 'https://github.com/aaron04648/AI-EMS',
   nav: [
-    { label: 'Übersicht', path: '/', newTab: false },
-    { label: 'Analyse', path: '/analyse', newTab: false },
-    { label: 'Rechner', path: '/rechner', newTab: true },
+    { label: 'Overview', path: '/', newTab: false },
+    { label: 'Analysis', path: '/analysis', newTab: false },
+    { label: 'Calculator', path: '/calculator', newTab: true },
   ],
-  /** Mitwirkende – neue Personen einfach hier ergänzen (github optional). */
+  /** Contributors – simply add new people here (github optional). */
   contributors: [
-    { name: 'Aaron Stupf', role: 'Webseite, Infrastruktur & PV-Modell', github: 'aaron04648' },
-    { name: 'Sebastian Lischer', role: 'Datenanalyse, MPC & CI/CD', github: '' },
+    { name: 'Aaron Stupf', role: 'Website, infrastructure & PV model', github: 'aaron04648' },
+    { name: 'Sebastian Lischer', role: 'Data analysis, MPC & CI/CD', github: '' },
   ],
   sources: [
     { name: 'Energy-Charts (Fraunhofer ISE)', url: 'https://energy-charts.info', license: 'CC BY 4.0' },
-    { name: 'EKZ Tarif-API', url: 'https://api.tariffs.ekz.ch/swagger/index.html' },
+    { name: 'EKZ tariff API', url: 'https://api.tariffs.ekz.ch/swagger/index.html' },
   ],
 } as const;

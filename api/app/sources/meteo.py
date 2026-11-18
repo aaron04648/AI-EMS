@@ -1,15 +1,15 @@
-"""Wetterdaten von MeteoSwiss.
+"""Weather data from MeteoSwiss.
 
-- Prognosen: Modelle ICON-CH1 (1 km, ~33 h) und ICON-CH2 (2 km, 5 Tage). MeteoSwiss publiziert
-  sie als Open Government Data (GRIB2); wir beziehen sie über Open-Meteo als JSON – inklusive
-  der Läufe vom Vortag („previous runs“).
-- Messungen: SwissMetNet-Stationen (Globalstrahlung gre000h0, Temperatur tre200h0) direkt aus
-  den MeteoSwiss-Open-Data (data.geo.admin.ch, STAC-Kollektion ch.meteoschweiz.ogd-smn).
+- Forecasts: models ICON-CH1 (1 km, ~33 h) and ICON-CH2 (2 km, 5 days). MeteoSwiss publishes
+  them as Open Government Data (GRIB2); we obtain them via Open-Meteo as JSON – including
+  the runs from the previous day ("previous runs").
+- Measurements: SwissMetNet stations (global irradiance gre000h0, temperature tre200h0) directly from
+  the MeteoSwiss Open Data (data.geo.admin.ch, STAC collection ch.meteoschweiz.ogd-smn).
 
-Der Backtest ist damit ehrlich: Die MPC sieht für jeden Tag die Prognose vom Vortag,
-abgerechnet wird mit der Messung der nächstgelegenen Station.
+This keeps the backtest honest: for each day the MPC sees the forecast from the previous day,
+billing uses the measurement of the nearest station.
 
-Lizenz: MeteoSwiss Open Data, CC BY 4.0 (https://opendatadocs.meteoswiss.ch).
+License: MeteoSwiss Open Data, CC BY 4.0 (https://opendatadocs.meteoswiss.ch).
 """
 
 from __future__ import annotations
@@ -30,13 +30,13 @@ MODELS = ("meteoswiss_icon_ch1", "meteoswiss_icon_ch2")
 
 def _hourly_frame(hourly: dict) -> pd.DataFrame:
     df = pd.DataFrame(hourly)
-    # Open-Meteo liefert UTC-Zeitstempel; Strahlung = Mittel der vorangehenden Stunde
+    # Open-Meteo returns UTC timestamps; irradiance = mean of the preceding hour
     df.index = pd.to_datetime(df.pop("time"), utc=True)
     return df
 
 
 def forecast(lat: float, lon: float, days: int = 2) -> pd.DataFrame:
-    """Aktuelle Prognose: ICON-CH1, wo vorhanden, sonst ICON-CH2. Spalten: ghi, temp."""
+    """Current forecast: ICON-CH1 where available, otherwise ICON-CH2. Columns: ghi, temp."""
     data = get_json(
         FORECAST,
         {"latitude": round(lat, 3), "longitude": round(lon, 3),
@@ -51,12 +51,12 @@ def forecast(lat: float, lon: float, days: int = 2) -> pd.DataFrame:
 
 
 def nearest_station(lat: float, lon: float) -> dict:
-    """Nächstgelegene aktive SwissMetNet-Station, die Globalstrahlung misst."""
+    """Nearest active SwissMetNet station that measures global irradiance."""
     inventory = pd.read_csv(io.StringIO(get_text(f"{SMN}/ogd-smn_meta_datainventory.csv", 86400, "latin-1")), sep=";")
     active = inventory[(inventory["parameter_shortname"] == "gre000h0") & inventory["data_till"].isna()]
     stations = pd.read_csv(io.StringIO(get_text(f"{SMN}/ogd-smn_meta_stations.csv", 86400, "latin-1")), sep=";")
     stations = stations[stations["station_abbr"].isin(active["station_abbr"])].copy()
-    # Distanz (Haversine) in km
+    # Distance (haversine) in km
     p1, p2 = math.radians(lat), stations["station_coordinates_wgs84_lat"].map(math.radians)
     dphi = p2 - p1
     dlmb = (stations["station_coordinates_wgs84_lon"] - lon).map(math.radians)
@@ -72,7 +72,7 @@ def nearest_station(lat: float, lon: float) -> dict:
 
 
 def station_measurements(abbr: str) -> pd.DataFrame:
-    """Stundenwerte der Station (letzte Wochen + heute). Spalten: ghi, temp; Index UTC (Ende der Stunde)."""
+    """Hourly values of the station (last weeks + today). Columns: ghi, temp; index UTC (end of the hour)."""
     frames = []
     for part in ("recent", "now"):
         url = f"{SMN}/{abbr.lower()}/ogd-smn_{abbr.lower()}_h_{part}.csv"
@@ -85,9 +85,9 @@ def station_measurements(abbr: str) -> pd.DataFrame:
 
 
 def backtest(lat: float, lon: float, past_days: int) -> tuple[pd.DataFrame, dict]:
-    """Vergangene Tage: Messung der nächsten MeteoSwiss-Station (Ist) und ICON-CH2-Prognose vom Vortag.
+    """Past days: measurement of the nearest MeteoSwiss station (actual) and ICON-CH2 forecast from the previous day.
 
-    Spalten: ghi, temp (Ist) sowie ghi_fc, temp_fc (Prognose vom Vortag am Standort).
+    Columns: ghi, temp (actual) as well as ghi_fc, temp_fc (forecast from the previous day at the location).
     """
     station = nearest_station(lat, lon)
     measured = station_measurements(station["abbr"])
@@ -104,22 +104,22 @@ def backtest(lat: float, lon: float, past_days: int) -> tuple[pd.DataFrame, dict
         "ghi_fc": df["shortwave_radiation_previous_day1"],
         "temp_fc": df["temperature_2m_previous_day1"],
     })
-    # Messlücken der Station mit dem jüngsten Modelllauf überbrücken
+    # Bridge measurement gaps of the station with the latest model run
     out["ghi"] = measured["ghi"].reindex(out.index).fillna(df["shortwave_radiation"])
     out["temp"] = measured["temp"].reindex(out.index).fillna(df["temperature_2m"])
     return out.dropna(), station
 
 
-# Gitter über die Schweiz für die Wetterkarte (ICON-CH2 deckt den ganzen Alpenraum ab)
+# Grid over Switzerland for the weather map (ICON-CH2 covers the entire Alpine region)
 GRID_LAT = (45.75, 47.85)
 GRID_LON = (5.85, 10.55)
 GRID_STEP = 0.15
 
 
 def weather_grid(hours_back: int = 6, hours_ahead: int = 48) -> dict:
-    """Bewölkung (%), Niederschlag (mm/h) und Globalstrahlung (W/m²) als Gitter je Stunde.
+    """Cloud cover (%), precipitation (mm/h) and global irradiance (W/m²) as a grid per hour.
 
-    Eine Anfrage mit allen Gitterpunkten (Open-Meteo erlaubt Koordinatenlisten), 30 min gecacht.
+    One request with all grid points (Open-Meteo allows coordinate lists), cached for 30 min.
     """
     n_lat = round((GRID_LAT[1] - GRID_LAT[0]) / GRID_STEP) + 1
     n_lon = round((GRID_LON[1] - GRID_LON[0]) / GRID_STEP) + 1
@@ -139,7 +139,7 @@ def weather_grid(hours_back: int = 6, hours_ahead: int = 48) -> dict:
             if now - pd.Timedelta(hours=hours_back) <= t <= now + pd.Timedelta(hours=hours_ahead)]
 
     def field(name: str, digits: int) -> list:
-        # [Zeit][Breitengrad][Längengrad], Breitengrade von Süd nach Nord
+        # [time][latitude][longitude], latitudes from south to north
         out = []
         for i in keep:
             frame = []
