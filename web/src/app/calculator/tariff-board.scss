@@ -101,7 +101,7 @@
   }
 }
 
-// ---------- Steuerung ----------
+// ---------- Controls ----------
 .board__controls {
   display: flex;
   align-items: center;
@@ -277,7 +277,7 @@
   }
 }
 
-// ---------- MPC-Aktionen ----------
+// ---------- MPC actions ----------
 .strip {
   display: grid;
   grid-template-columns: repeat(96, 1fr);
@@ -312,7 +312,7 @@
   }
 }
 
-// ---------- Tages-Slider ----------
+// ---------- Day slider ----------
 .days {
   display: flex;
   align-items: flex-start;

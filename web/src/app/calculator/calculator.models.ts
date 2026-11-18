@@ -1,4 +1,4 @@
-/** Eingaben des Rechners – entspricht api/app/schemas.py (Anteile als 0–1). */
+/** Calculator inputs – corresponds to api/app/schemas.py (shares as 0–1). */
 export interface SimulationRequest {
   location: { lat: number; lon: number; label: string };
   pv: { kwp: number; tilt: number; azimuth: number; loss: number };
@@ -55,7 +55,7 @@ export interface SimulationResult {
     estimated_prices: number;
     strategies: Record<StrategyKey, StrategyResult>;
   };
-  /** Publizierte Tarife der letzten 14 Tage bis Ende der Publikation (Rp./kWh, 15 min) */
+  /** Published tariffs of the last 14 days up to the end of publication (ct/kWh, 15 min) */
   tariffs: {
     start: number;
     step: number;

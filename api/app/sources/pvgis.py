@@ -1,7 +1,7 @@
-"""PVGIS (EU JRC) – historische Stundenreihen und Jahresertrag.
+"""PVGIS (EU JRC) – historical hourly series and annual yield.
 
-Dokumentation: https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/getting-started-pvgis/api-non-interactive-service_en
-Konvention Ausrichtung (aspect): 0 = Süd, -90 = Ost, 90 = West.
+Documentation: https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/getting-started-pvgis/api-non-interactive-service_en
+Orientation convention (aspect): 0 = south, -90 = east, 90 = west.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import pandas as pd
 from .http import get_json
 
 BASE = "https://re.jrc.ec.europa.eu/api/v5_3"
-YEARS = (2020, 2023)  # SARAH-3 deckt Europa bis 2023 ab
+YEARS = (2020, 2023)  # SARAH-3 covers Europe until 2023
 DAY = 24 * 3600
 
 
@@ -22,10 +22,10 @@ def _frame(hourly: list[dict]) -> pd.DataFrame:
 
 
 def hourly_series(lat: float, lon: float, tilt: float, azimuth: float, loss: float) -> pd.DataFrame:
-    """PV-Leistung (W pro kWp) der gewählten Ausrichtung + horizontale Einstrahlung (W/m²).
+    """PV power (W per kWp) of the chosen orientation + horizontal irradiance (W/m²).
 
-    Zwei Abfragen: einmal mit PV-Berechnung für die Anlage, einmal die Strahlungskomponenten
-    auf der Horizontalen (= Globalstrahlung, wie sie auch die Wetterprognose liefert).
+    Two requests: one with PV calculation for the system, one with the irradiance components
+    on the horizontal (= global irradiance, as also provided by the weather forecast).
     """
     common = {
         "lat": round(lat, 3),
@@ -54,7 +54,7 @@ def hourly_series(lat: float, lon: float, tilt: float, azimuth: float, loss: flo
 
 
 def yearly_yield(lat: float, lon: float, tilt: float, azimuth: float, loss: float, kwp: float) -> dict:
-    """Langjähriger mittlerer Ertrag (kWh) – gesamt und pro Monat."""
+    """Long-term mean yield (kWh) – total and per month."""
     data = get_json(
         f"{BASE}/PVcalc",
         {"lat": round(lat, 3), "lon": round(lon, 3), "peakpower": round(kwp, 2), "loss": round(loss, 1),

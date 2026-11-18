@@ -1,0 +1,9 @@
+,mean_abs_shap_eur_mwh
+Other weather,0.196
+Calendar,0.752
+Solar forecast,1.833
+Wind forecast,2.099
+Hydro & exchange (lags),2.407
+Neighbouring prices (lags),3.980
+Price level (lags CH),13.972
+Load/residual load forecast,16.849

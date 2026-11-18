@@ -1,10 +1,10 @@
-# LightGBM-Prognose des CH-Day-Ahead-Preises (24 h im Voraus)
+# LightGBM forecast of the CH day-ahead price (24 h ahead)
 
-106 Features, Training ab 2024-01-01, Holdout ab 2025-10-01.
+106 features, training from 2024-01-01, holdout from 2025-10-01.
 
-## Hyperparameter (TimeSeriesSplit, 5 Folds à 60 Tage, 24 h Lücke)
+## Hyperparameters (TimeSeriesSplit, 5 folds of 60 days, 24 h gap)
 
-Bester CV-MAE: 9.73 ± 0.86 EUR/MWh
+Best CV MAE: 9.73 ± 0.86 EUR/MWh
 
 ```json
 {
@@ -20,24 +20,24 @@ Bester CV-MAE: 9.73 ± 0.86 EUR/MWh
 }
 ```
 
-## Ergebnis Holdout (01.10.2025 – 23.10.2026, 9312 Stunden)
+## Holdout result (01.10.2025 – 23.10.2026, 9312 hours)
 
-Mittlerer Absolutpreis: 126.3 EUR/MWh. nMAE = MAE / mittlerer Absolutpreis.
+Mean absolute price: 126.3 EUR/MWh. nMAE = MAE / mean absolute price.
 
-| Modell                                |   MAE |   nMAE_% |   RMSE |    n |   Verbesserung ggü. Persistenz_% |
-|:--------------------------------------|------:|---------:|-------:|-----:|---------------------------------:|
-| LightGBM                              | 10.99 |     8.70 |  19.13 | 9312 |                            39.44 |
-| LightGBM ohne Netzbetreiber-Prognosen | 13.06 |    10.34 |  21.80 | 9312 |                            28.04 |
-| Ridge-Regression                      | 12.82 |    10.15 |  19.89 | 9312 |                            29.37 |
-| Profil 14 Tage                        | 18.10 |    14.32 |  28.92 | 9312 |                             0.31 |
-| Persistenz 24 h                       | 18.15 |    14.37 |  31.62 | 9312 |                             0.00 |
-| Persistenz 168 h                      | 22.35 |    17.69 |  36.09 | 9312 |                           -23.11 |
+| Model                                    |   MAE |   nMAE_% |   RMSE |    n |   Improvement vs. persistence_% |
+|:-----------------------------------------|------:|---------:|-------:|-----:|--------------------------------:|
+| LightGBM                                 | 10.99 |     8.70 |  19.13 | 9312 |                           39.44 |
+| LightGBM without grid operator forecasts | 13.06 |    10.34 |  21.80 | 9312 |                           28.04 |
+| Ridge regression                         | 12.82 |    10.15 |  19.89 | 9312 |                           29.37 |
+| Profile 14 days                          | 18.10 |    14.32 |  28.92 | 9312 |                            0.31 |
+| Persistence 24 h                         | 18.15 |    14.37 |  31.62 | 9312 |                            0.00 |
+| Persistence 168 h                        | 22.35 |    17.69 |  36.09 | 9312 |                          -23.11 |
 
-**Ziel nMAE < 10 %: erreicht** (LightGBM 8.7 %).
+**Target nMAE < 10 %: achieved** (LightGBM 8.7 %).
 
-### Je Monat
+### Per month
 
-| Monat   |   MAE |   nMAE_% |   RMSE |   n |
+| Month   |   MAE |   nMAE_% |   RMSE |   n |
 |:--------|------:|---------:|-------:|----:|
 | 2025-10 |  6.26 |     5.89 |   8.67 | 745 |
 | 2025-11 |  7.51 |     6.43 |  14.59 | 720 |
@@ -53,57 +53,57 @@ Mittlerer Absolutpreis: 126.3 EUR/MWh. nMAE = MAE / mittlerer Absolutpreis.
 | 2026-09 | 18.49 |    10.98 |  25.18 | 720 |
 | 2026-10 | 15.06 |     7.14 |  19.32 | 552 |
 
-8 von 13 Monaten unter 10 %.
+8 of 13 months below 10 %.
 
-CH-Day-Ahead im Holdout in 0 days 01:00:00 Auflösung – keine separate 15-min-Auswertung nötig.
+CH day-ahead in the holdout at 0 days 01:00:00 resolution – no separate 15 min evaluation needed.
 
-## Grafiken
-
-
-![01_nmae_je_monat.png](01_nmae_je_monat.png)
+## Charts
 
 
-![02_beispielwochen.png](02_beispielwochen.png)
+![01_nmae_by_month.png](01_nmae_by_month.png)
 
 
-![03_fehler_je_stunde.png](03_fehler_je_stunde.png)
+![02_example_weeks.png](02_example_weeks.png)
 
 
-## Erklärung mit SHAP
+![03_error_by_hour.png](03_error_by_hour.png)
+
+
+## Explanation with SHAP
 
 
 ![04_shap_beeswarm.png](04_shap_beeswarm.png)
 
 
-![05_shap_treibergruppen.png](05_shap_treibergruppen.png)
+![05_shap_driver_groups.png](05_shap_driver_groups.png)
 
 
-![06_erklaerung_tiefpreis_tag.png](06_erklaerung_tiefpreis_tag.png)
+![06_explanation_low_price_day.png](06_explanation_low_price_day.png)
 
 
-![06_erklaerung_tiefpreis_tag_verlauf.png](06_erklaerung_tiefpreis_tag_verlauf.png)
+![06_explanation_low_price_day_profile.png](06_explanation_low_price_day_profile.png)
 
-**Freitag 01.05.2026, 13:00 Uhr** – Prognose -98.7 EUR/MWh, Ist -381.7 EUR/MWh. Ausgangspunkt Vortag -43.8 EUR/MWh, mittlere Modellkorrektur +0.1; wichtigste Beiträge zur Änderung:
+**Friday 01.05.2026, 13:00** – forecast -98.7 EUR/MWh, actual -381.7 EUR/MWh. Starting point previous day -43.8 EUR/MWh, mean model correction +0.1; most important contributions to the change:
 
-- `lag_ch_24` = -43.8 → +28.9 EUR/MWh (Preisniveau (Lags CH))
-- `fc_resid_sum_d24` = -35031.6 → -19.4 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_sum` = 12611.3 → -12.7 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_it` = -7816.0 → -6.7 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_de` = -8155.4 → -3.5 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_sum_dmean` = 62717.3 → -3.4 EUR/MWh (Last/Residuallast-Prognose)
-
-
-![07_erklaerung_hochpreis_tag.png](07_erklaerung_hochpreis_tag.png)
+- `lag_ch_24` = -43.8 → +28.9 EUR/MWh (Price level (lags CH))
+- `fc_resid_sum_d24` = -35031.6 → -19.4 EUR/MWh (Load/residual load forecast)
+- `fc_resid_sum` = 12611.3 → -12.7 EUR/MWh (Load/residual load forecast)
+- `fc_resid_it` = -7816.0 → -6.7 EUR/MWh (Load/residual load forecast)
+- `fc_resid_de` = -8155.4 → -3.5 EUR/MWh (Load/residual load forecast)
+- `fc_resid_sum_dmean` = 62717.3 → -3.4 EUR/MWh (Load/residual load forecast)
 
 
-![07_erklaerung_hochpreis_tag_verlauf.png](07_erklaerung_hochpreis_tag_verlauf.png)
+![07_explanation_high_price_day.png](07_explanation_high_price_day.png)
 
-**Dienstag 06.10.2026, 19:00 Uhr** – Prognose 274.3 EUR/MWh, Ist 330.0 EUR/MWh. Ausgangspunkt Vortag 255.1 EUR/MWh, mittlere Modellkorrektur +0.2; wichtigste Beiträge zur Änderung:
 
-- `lag_ch_24` = 255.1 → -28.0 EUR/MWh (Preisniveau (Lags CH))
-- `fc_resid_sum_d24` = 11251.5 → +9.6 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_de` = 59154.9 → +6.4 EUR/MWh (Last/Residuallast-Prognose)
-- `fc_resid_de_d24` = 13671.4 → +3.2 EUR/MWh (Last/Residuallast-Prognose)
-- `roll_it_d1_mean` = 210.4 → +3.0 EUR/MWh (Nachbarpreise (Lags))
-- `fc_resid_sum_rel` = 41993.1 → +2.4 EUR/MWh (Last/Residuallast-Prognose)
+![07_explanation_high_price_day_profile.png](07_explanation_high_price_day_profile.png)
+
+**Tuesday 06.10.2026, 19:00** – forecast 274.3 EUR/MWh, actual 330.0 EUR/MWh. Starting point previous day 255.1 EUR/MWh, mean model correction +0.2; most important contributions to the change:
+
+- `lag_ch_24` = 255.1 → -28.0 EUR/MWh (Price level (lags CH))
+- `fc_resid_sum_d24` = 11251.5 → +9.6 EUR/MWh (Load/residual load forecast)
+- `fc_resid_de` = 59154.9 → +6.4 EUR/MWh (Load/residual load forecast)
+- `fc_resid_de_d24` = 13671.4 → +3.2 EUR/MWh (Load/residual load forecast)
+- `roll_it_d1_mean` = 210.4 → +3.0 EUR/MWh (Neighbouring prices (lags))
+- `fc_resid_sum_rel` = 41993.1 → +2.4 EUR/MWh (Load/residual load forecast)
 

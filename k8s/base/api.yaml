@@ -1,5 +1,5 @@
-# Python-Backend: PV-Prognose (PVGIS + MeteoSwiss), MPC, Backtest.
-# Der Service heisst „api“, weil nginx im Web-Pod auf http://api:8000 weiterleitet.
+# Python backend: PV forecast (PVGIS + MeteoSwiss), MPC, backtest.
+# The service is called "api" because nginx in the web pod forwards to http://api:8000.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,7 +39,7 @@ spec:
             - name: http
               containerPort: 8000
           env:
-            # Day-Ahead-Preise aus dem Snapshot des Fetchers (Service ai-ems → nginx /data)
+            # Day-ahead prices from the fetcher snapshot (service ai-ems → nginx /data)
             - name: SNAPSHOT_URL
               value: http://ai-ems/data
           volumeMounts:

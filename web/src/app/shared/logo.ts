@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/** Wortmarke: Blitz im abgerundeten Quadrat + „AI-EMS“. */
+/** Wordmark: lightning bolt in a rounded square + "AI-EMS". */
 @Component({
   selector: 'app-logo',
   template: `

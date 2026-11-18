@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { Header } from '../shared/header/header';
 import { Footer } from '../shared/footer/footer';
 
-/** Rahmen der Webseite (Übersicht, Analyse) – der Rechner hat ein eigenes Layout. */
+/** Website frame (overview, analysis) – the calculator has its own layout. */
 @Component({
   selector: 'app-site-layout',
   imports: [RouterOutlet, Header, Footer],

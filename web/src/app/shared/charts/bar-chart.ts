@@ -4,15 +4,15 @@ import { fmt } from '../../core/series';
 export interface BarRow {
   label: string;
   value: number;
-  /** optionale Zusatzinfo im Tooltip */
+  /** optional additional info in the tooltip */
   note?: string;
   highlight?: boolean;
 }
 
 /**
- * Balkendiagramm (horizontal) bzw. Säulendiagramm (vertikal).
- * Negative Werte wachsen von der Nulllinie nach links bzw. unten.
- * Hervorgehobene Balken erhalten die Akzentfarbe, die übrigen ein ruhiges Grau-Blau.
+ * Bar chart (horizontal) or column chart (vertical).
+ * Negative values grow from the zero line to the left or downwards.
+ * Highlighted bars get the accent colour, the others a calm grey-blue.
  */
 @Component({
   selector: 'app-bar-chart',
@@ -97,7 +97,7 @@ export class BarChart {
     return { lo, span: hi - lo || 1 };
   });
 
-  /** Position der Nulllinie in Prozent der Spur */
+  /** Position of the zero line in percent of the track */
   protected readonly zeroPct = computed(() => (-this.range().lo / this.range().span) * 100);
 
   protected pct(value: number): number {

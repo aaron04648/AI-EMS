@@ -1,5 +1,5 @@
-# Produktiv-Overlay – wird von Argo CD synchronisiert.
-# Die Image-Tags setzt die GitHub Action bei jedem Push auf main (Commit-SHA).
+# Production overlay – synced by Argo CD.
+# The image tags are set by the GitHub Action on every push to main (commit SHA).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: ai-ems

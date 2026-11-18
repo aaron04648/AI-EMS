@@ -4,19 +4,19 @@ import { fmt } from '../../core/series';
 const PAD = { top: 28, right: 16, bottom: 28, left: 48 };
 
 /**
- * Hauptgrafik des Dashboards: Ist-Preis bis „Jetzt“, danach die simulierten 24 h.
- * Werte gelten jeweils bis zum nächsten Zeitpunkt (Treppenlinie, Marktpreise sind Blockpreise).
- * Optional eine Vergleichsreihe (Prognose der Vergangenheit) als dünne Linie.
+ * Main chart of the dashboard: actual price up to "now", then the simulated 24 h.
+ * Each value applies until the next point in time (step line, market prices are block prices).
+ * Optionally a comparison series (past forecast) as a thin line.
  */
 @Component({
   selector: 'app-forecast-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ul class="legend">
-      <li><span class="legend__swatch" style="background: var(--ink)"></span>Ist</li>
-      <li><span class="legend__swatch" style="background: var(--s1)"></span>Prognose</li>
+      <li><span class="legend__swatch" style="background: var(--ink)"></span>Actual</li>
+      <li><span class="legend__swatch" style="background: var(--s1)"></span>Forecast</li>
       @if (compare()) {
-        <li><span class="legend__swatch legend__swatch--thin" style="background: var(--s1)"></span>Prognose Vergangenheit</li>
+        <li><span class="legend__swatch legend__swatch--thin" style="background: var(--s1)"></span>Past forecast</li>
       }
     </ul>
     <div class="plot" [style.height.px]="plotH()">
@@ -49,7 +49,7 @@ const PAD = { top: 28, right: 16, bottom: 28, left: 48 };
         <path class="line line--forecast" [attr.d]="paths().forecast" />
 
         <line class="cut" [attr.x1]="cutX()" [attr.x2]="cutX()" [attr.y1]="pad.top - 18" [attr.y2]="pad.top + innerH()" />
-        <text class="cut-label" [attr.x]="cutX() + 6" [attr.y]="pad.top - 8">Jetzt {{ xFormat()(cut()) }}</text>
+        <text class="cut-label" [attr.x]="cutX() + 6" [attr.y]="pad.top - 8">Now {{ xFormat()(cut()) }}</text>
         @if (endX() - cutX() > 150) {
           <text class="cut-label cut-label--end" [attr.x]="endX() - 4" [attr.y]="pad.top - 8">+24 h</text>
         }
@@ -80,12 +80,12 @@ const PAD = { top: 28, right: 16, bottom: 28, left: 48 };
   host: { class: 'chart' },
 })
 export class ForecastChart {
-  /** Zeitpunkte (unix-Sekunden, aufsteigend, gleichmässiger Schritt) */
+  /** Points in time (unix seconds, ascending, uniform step) */
   readonly x = input.required<number[]>();
   readonly actual = input.required<(number | null)[]>();
   readonly forecast = input.required<(number | null)[]>();
   readonly compare = input<(number | null)[] | null>(null);
-  /** Beginn der Simulation */
+  /** Start of the simulation */
   readonly cut = input.required<number>();
   readonly width = input(640);
   readonly height = input(320);
@@ -93,12 +93,12 @@ export class ForecastChart {
   readonly tooltipTitle = input<(t: number) => string>((t) => String(t));
   readonly xTickCount = input(8);
   readonly unit = input('€/MWh');
-  readonly ariaLabel = input('Ist-Preis und Prognose');
+  readonly ariaLabel = input('Actual price and forecast');
 
   protected readonly pad = PAD;
   protected readonly hover = signal<number | null>(null);
 
-  /** Höhe abzüglich Legende */
+  /** Height minus legend */
   protected readonly plotH = computed(() => Math.max(160, this.height() - 32));
   protected readonly innerW = computed(() => this.width() - PAD.left - PAD.right);
   protected readonly innerH = computed(() => this.plotH() - PAD.top - PAD.bottom);
@@ -120,7 +120,7 @@ export class ForecastChart {
     const all = [...this.actual(), ...this.forecast(), ...(this.compare() ?? [])].filter(
       (v): v is number => v != null,
     );
-    // Achse auf den Datenbereich (Null nur, wenn Preise negativ werden)
+    // Axis on the data range (zero only when prices become negative)
     let lo = Math.min(...all);
     let hi = Math.max(...all);
     if (!all.length) [lo, hi] = [0, 1];
@@ -164,7 +164,7 @@ export class ForecastChart {
     });
   });
 
-  /** Treppenlinie: jeder Wert gilt von t bis t + Schritt */
+  /** Step line: each value applies from t to t + step */
   private stepPath(values: (number | null)[]): string {
     const xs = this.x();
     const sx = this.sx();
@@ -202,9 +202,9 @@ export class ForecastChart {
       rows.push({ name, color, value: `${fmt(v, 1)} ${this.unit()}` });
       dots.push({ cls, y: this.sy()(v) });
     };
-    add('Ist', 'var(--ink)', 'dot--actual', this.actual()[i]);
-    add('Prognose', 'var(--s1)', 'dot--forecast', this.forecast()[i]);
-    add('Prognose Vergangenheit', 'var(--s1)', 'dot--compare', this.compare()?.[i]);
+    add('Actual', 'var(--ink)', 'dot--actual', this.actual()[i]);
+    add('Forecast', 'var(--s1)', 'dot--forecast', this.forecast()[i]);
+    add('Past forecast', 'var(--s1)', 'dot--compare', this.compare()?.[i]);
     return { x, title: this.tooltipTitle()(t), rows, dots };
   });
 

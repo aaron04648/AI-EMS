@@ -1,6 +1,6 @@
 import { Grid } from './data.models';
 
-/** Ein Messpunkt: unix-Sekunden + Wert. */
+/** A data point: unix seconds + value. */
 export interface Point {
   t: number;
   v: number;
@@ -8,7 +8,7 @@ export interface Point {
 
 const TZ = 'Europe/Zurich';
 
-const partsFormatter = new Intl.DateTimeFormat('de-CH', {
+const partsFormatter = new Intl.DateTimeFormat('en-CH', {
   timeZone: TZ,
   year: 'numeric',
   month: '2-digit',
@@ -20,20 +20,20 @@ const partsFormatter = new Intl.DateTimeFormat('de-CH', {
 });
 
 export interface LocalParts {
-  /** YYYY-MM-DD in Schweizer Zeit */
+  /** YYYY-MM-DD in Swiss time */
   day: string;
   /** YYYY-MM */
   month: string;
   hour: number;
   minute: number;
-  /** 0 = Sonntag … 6 = Samstag */
+  /** 0 = Sunday … 6 = Saturday */
   weekday: number;
 }
 
-const WEEKDAYS: Record<string, number> = { So: 0, Mo: 1, Di: 2, Mi: 3, Do: 4, Fr: 5, Sa: 6 };
+const WEEKDAYS: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 const partsCache = new Map<number, LocalParts>();
 
-/** Zerlegt einen Zeitpunkt in Schweizer Lokalzeit (inkl. Sommerzeit). */
+/** Splits a point in time into Swiss local time (incl. daylight saving time). */
 export function localParts(t: number): LocalParts {
   let cached = partsCache.get(t);
   if (!cached) {
@@ -46,14 +46,14 @@ export function localParts(t: number): LocalParts {
       month: `${p['year']}-${p['month']}`,
       hour: Number(p['hour']),
       minute: Number(p['minute']),
-      weekday: WEEKDAYS[p['weekday'].replace('.', '').slice(0, 2)] ?? 0,
+      weekday: WEEKDAYS[p['weekday'].replace('.', '').slice(0, 3)] ?? 0,
     };
     partsCache.set(t, cached);
   }
   return cached;
 }
 
-/** Wandelt ein Raster in Punkte um und lässt Lücken weg. */
+/** Converts a grid into points and omits gaps. */
 export function points(grid: Grid, from = -Infinity, to = Infinity): Point[] {
   const out: Point[] = [];
   grid.values.forEach((v, i) => {
@@ -65,18 +65,18 @@ export function points(grid: Grid, from = -Infinity, to = Infinity): Point[] {
   return out;
 }
 
-/** Zeitpunkte eines Rasters. */
+/** Points in time of a grid. */
 export function times(grid: Grid): number[] {
   return grid.values.map((_, i) => grid.start + i * grid.step);
 }
 
-/** Wert eines Rasters zum Zeitpunkt t (oder null). */
+/** Value of a grid at time t (or null). */
 export function valueAt(grid: Grid, t: number): number | null {
   const idx = Math.floor((t - grid.start) / grid.step);
   return grid.values[idx] ?? null;
 }
 
-/** Gruppiert Punkte nach einem Schlüssel (z. B. Tag) und bewahrt die Reihenfolge. */
+/** Groups points by a key (e.g. day) and preserves the order. */
 export function groupBy<K>(pts: Point[], key: (p: Point) => K): Map<K, Point[]> {
   const map = new Map<K, Point[]>();
   for (const p of pts) {
@@ -95,7 +95,7 @@ export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0)
 export const min = (xs: number[]) => Math.min(...xs);
 export const max = (xs: number[]) => Math.max(...xs);
 
-/** Pearson-Korrelation zweier gleich langer Reihen. */
+/** Pearson correlation of two series of equal length. */
 export function correlation(xs: number[], ys: number[]): number {
   const n = Math.min(xs.length, ys.length);
   if (n < 3) return NaN;
@@ -114,13 +114,13 @@ export function correlation(xs: number[], ys: number[]): number {
   return sxy / Math.sqrt(sxx * syy);
 }
 
-/** Mittelwert pro Stunde des Tages (0–23, Schweizer Zeit). */
+/** Mean per hour of the day (0–23, Swiss time). */
 export function hourlyProfile(pts: Point[]): number[] {
   const groups = groupBy(pts, (p) => localParts(p.t).hour);
   return Array.from({ length: 24 }, (_, h) => mean((groups.get(h) ?? []).map((p) => p.v)));
 }
 
-// ---------- Formatierung ----------
+// ---------- Formatting ----------
 
 const formatters = new Map<number, Intl.NumberFormat>();
 
@@ -128,14 +128,14 @@ export function fmt(v: number | null | undefined, digits = 0): string {
   if (v == null || Number.isNaN(v)) return '–';
   let f = formatters.get(digits);
   if (!f) {
-    f = new Intl.NumberFormat('de-CH', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    f = new Intl.NumberFormat('en-CH', { minimumFractionDigits: digits, maximumFractionDigits: digits });
     formatters.set(digits, f);
   }
   return f.format(v);
 }
 
-const dayFmt = new Intl.DateTimeFormat('de-CH', { timeZone: TZ, day: 'numeric', month: 'short' });
-const dayTimeFmt = new Intl.DateTimeFormat('de-CH', {
+const dayFmt = new Intl.DateTimeFormat('en-CH', { timeZone: TZ, day: 'numeric', month: 'short' });
+const dayTimeFmt = new Intl.DateTimeFormat('en-CH', {
   timeZone: TZ,
   weekday: 'short',
   day: 'numeric',
@@ -143,9 +143,9 @@ const dayTimeFmt = new Intl.DateTimeFormat('de-CH', {
   hour: '2-digit',
   minute: '2-digit',
 });
-const timeFmt = new Intl.DateTimeFormat('de-CH', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-const monthFmt = new Intl.DateTimeFormat('de-CH', { timeZone: TZ, month: 'short', year: '2-digit' });
-const fullFmt = new Intl.DateTimeFormat('de-CH', {
+const timeFmt = new Intl.DateTimeFormat('en-CH', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+const monthFmt = new Intl.DateTimeFormat('en-CH', { timeZone: TZ, month: 'short', year: '2-digit' });
+const fullFmt = new Intl.DateTimeFormat('en-CH', {
   timeZone: TZ,
   day: 'numeric',
   month: 'long',
@@ -160,6 +160,6 @@ export const formatTime = (t: number) => timeFmt.format(t * 1000);
 export const formatMonth = (t: number) => monthFmt.format(t * 1000);
 export const formatFull = (t: number) => fullFmt.format(t * 1000);
 
-/** Wechselkurs für die Umrechnung EUR/MWh → Rp./kWh (Näherung). */
+/** Exchange rate for the conversion EUR/MWh → ct/kWh (approximation). */
 export const EUR_CHF = 0.94;
-export const eurMwhToRpKwh = (v: number) => (v / 10) * EUR_CHF;
+export const eurMwhToCtKwh = (v: number) => (v / 10) * EUR_CHF;

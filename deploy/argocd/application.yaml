@@ -1,6 +1,6 @@
-# Argo CD überwacht k8s/overlays/prod auf main und synchronisiert automatisch.
-# Jeder Push auf main → GitHub Action baut Images → setzt neue Tags im Overlay
-# → Argo CD erkennt den Commit und rollt die neue Version aus.
+# Argo CD watches k8s/overlays/prod on main and syncs automatically.
+# Every push to main → GitHub Action builds images → sets new tags in the overlay
+# → Argo CD detects the commit and rolls out the new version.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

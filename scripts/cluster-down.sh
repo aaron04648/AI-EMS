@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Löscht den lokalen Produktiv-Cluster wieder.
+# Deletes the local production cluster again.
 set -euo pipefail
 kind delete cluster --name ai-ems

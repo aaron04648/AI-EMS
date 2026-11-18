@@ -1,4 +1,4 @@
-/** Zeitreihe auf festem Raster: Wert i gehört zum Zeitpunkt start + i * step (unix-Sekunden). */
+/** Time series on a fixed grid: value i belongs to time start + i * step (unix seconds). */
 export interface Grid {
   start: number;
   step: number;

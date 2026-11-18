@@ -14,8 +14,8 @@ import { DriverChart, DriverSeries } from './driver-chart';
 import { ForecastChart } from './forecast-chart';
 
 /**
- * Snapshot aus analysis/05_forecast.py: Ist und LightGBM-Prognose des CH-Day-Ahead-Preises (stündlich)
- * von jetzt − 7 Tage bis jetzt + 30 h, dazu die SHAP-Beiträge je Treiber für die Prognosestunden.
+ * Snapshot from analysis/05_forecast.py: actual and LightGBM forecast of the CH day-ahead price (hourly)
+ * from now − 7 days to now + 30 h, plus the SHAP contributions per driver for the forecast hours.
  */
 interface Forecast {
   created: string;
@@ -31,20 +31,20 @@ const QUARTER = 900;
 const HOUR = 3600;
 const DAY = 86400;
 
-/** Farbe folgt dem Treiber, nie seinem Rang (feste Zuordnung, validierte Palette) */
+/** Colour follows the driver, never its rank (fixed mapping, validated palette) */
 const DRIVER_COLOR: Record<string, string> = {
-  Residuallast: 'var(--s1)',
-  Preisniveau: 'var(--s2)',
-  Nachbarländer: 'var(--s3)',
+  'Residual load': 'var(--s1)',
+  'Price level': 'var(--s2)',
+  'Neighbouring countries': 'var(--s3)',
   Solar: 'var(--s4)',
   Wind: 'var(--s5)',
-  'Wasser & Austausch': 'var(--s6)',
-  Kalender: 'var(--s7)',
-  Wetter: 'var(--s8)',
-  Übrige: 'var(--chart-muted)',
+  'Hydro & exchange': 'var(--s6)',
+  Calendar: 'var(--s7)',
+  Weather: 'var(--s8)',
+  Other: 'var(--chart-muted)',
 };
 
-const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const hhmm = (t: number) => {
   const p = localParts(t);
   return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
@@ -68,13 +68,13 @@ export class Analysis {
   protected readonly dayTime = (t: number) => `${dayLabel(t)} ${hhmm(t)}`;
   protected readonly views: { key: View; label: string }[] = [
     { key: 'day', label: '24 h · 15 min' },
-    { key: 'week', label: '7 Tage' },
-    { key: 'reasons', label: 'Gründe' },
+    { key: 'week', label: '7 days' },
+    { key: 'reasons', label: 'Reasons' },
   ];
-  /** Startansicht, direkt verlinkbar mit ?ansicht=7-tage bzw. ?ansicht=gruende */
+  /** Initial view, directly linkable with ?view=7-days or ?view=reasons */
   protected readonly view = signal<View>(
-    ({ '7-tage': 'week', gruende: 'reasons' } as Record<string, View>)[
-      new URLSearchParams(globalThis.location?.search ?? '').get('ansicht') ?? ''
+    ({ '7-days': 'week', reasons: 'reasons' } as Record<string, View>)[
+      new URLSearchParams(globalThis.location?.search ?? '').get('view') ?? ''
     ] ?? 'day',
   );
 
@@ -88,19 +88,19 @@ export class Analysis {
   protected readonly f = computed(() => (this.snapshot.hasValue() ? this.snapshot.value() : null));
   protected readonly error = computed(() => !!this.snapshot.error());
 
-  // ---------- Grösse der Grafikfläche (füllt den restlichen Bildschirm) ----------
+  // ---------- Size of the chart area (fills the remaining screen) ----------
   private readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
   protected readonly stageW = signal(800);
   protected readonly stageH = signal(400);
 
-  // ---------- aktuelle Viertelstunde (läuft mit, solange die Seite offen ist) ----------
+  // ---------- current quarter hour (keeps running while the page is open) ----------
   private readonly clock = signal(Math.floor(Date.now() / 1000));
 
   constructor() {
     const destroy = inject(DestroyRef);
     const timer = setInterval(() => this.clock.set(Math.floor(Date.now() / 1000)), 30_000);
     destroy.onDestroy(() => clearInterval(timer));
-    // Die Grafikfläche existiert erst, wenn die Daten geladen sind → beobachten, sobald sie da ist
+    // The chart area only exists once the data is loaded → observe it as soon as it is there
     const observer = new ResizeObserver(([entry]) => {
       const box = entry.contentRect;
       this.stageW.set(Math.max(280, Math.floor(box.width)));
@@ -114,8 +114,8 @@ export class Analysis {
   }
 
   /**
-   * Beginn der Simulation: aktuelle Viertelstunde, begrenzt auf den Bereich, den der Snapshot abdeckt
-   * (nach dem Lauf bleibt das Fenster so einige Stunden korrekt, danach bleibt es beim letzten Stand).
+   * Start of the simulation: current quarter hour, limited to the range the snapshot covers
+   * (after the run the window thus stays correct for a few hours, afterwards it stays at the last state).
    */
   protected readonly cut = computed(() => {
     const f = this.f();
@@ -125,7 +125,7 @@ export class Analysis {
     return Math.min(Math.max(now, f.now), last - DAY);
   });
 
-  /** Stundenwerte → Viertelstunden (CH-Day-Ahead ist ein Stundenpreis) */
+  /** Hourly values → quarter hours (CH day-ahead is an hourly price) */
   private readonly quarters = computed(() => {
     const f = this.f();
     if (!f) return null;
@@ -142,7 +142,7 @@ export class Analysis {
     return { t, actual, forecast };
   });
 
-  /** Die simulierten 96 Viertelstunden ab jetzt */
+  /** The simulated 96 quarter hours from now */
   protected readonly next24 = computed(() => {
     const q = this.quarters();
     const cut = this.cut();
@@ -161,7 +161,7 @@ export class Analysis {
     return { avg, low, high };
   });
 
-  /** Liste rechts: Balkenlänge relativ zu Tief/Hoch, Tageswechsel als Trenner */
+  /** List on the right: bar length relative to low/high, day change as separator */
   protected readonly list = computed(() => {
     const pts = this.next24();
     const k = this.kpis();
@@ -176,7 +176,7 @@ export class Analysis {
     }));
   });
 
-  /** 24 h zurück + 24 h voraus in Viertelstunden */
+  /** 24 h back + 24 h ahead in quarter hours */
   protected readonly dayChart = computed(() => {
     const q = this.quarters();
     const cut = this.cut();
@@ -189,7 +189,7 @@ export class Analysis {
     };
   });
 
-  /** 7 Tage zurück (Ist + damalige Prognose) + 24 h voraus, stündlich */
+  /** 7 days back (actual + forecast at the time) + 24 h ahead, hourly */
   protected readonly weekChart = computed(() => {
     const f = this.f();
     const cut = this.cut();
@@ -205,7 +205,7 @@ export class Analysis {
     };
   });
 
-  /** Beitrag je Treiber und Prognosestunde (SHAP), nur die 24 h ab jetzt */
+  /** Contribution per driver and forecast hour (SHAP), only the 24 h from now */
   protected readonly reasons = computed(() => {
     const f = this.f();
     const cut = Math.floor(this.cut() / HOUR) * HOUR;
@@ -219,7 +219,7 @@ export class Analysis {
     return { x: idx.map((i) => f.reasons.t[i]), series };
   });
 
-  protected readonly stand = computed(() => {
+  protected readonly asOf = computed(() => {
     const f = this.f();
     return f ? `${f.created.slice(8, 10)}.${f.created.slice(5, 7)}. ${f.created.slice(11, 16)}` : '';
   });

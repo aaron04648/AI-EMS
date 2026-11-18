@@ -1,106 +1,106 @@
-# Analyse: Preistreiber & 24h-Prognose des Schweizer Day-Ahead-Preises
+# Analysis: price drivers & 24h forecast of the Swiss day-ahead price
 
-Ziel 1 des Projekts: die europäischen Treiber des CH-Day-Ahead-Preises erklären und ihn 24 h
-im Voraus mit einem **nMAE unter 10 %** prognostizieren.
-Der Rechner und das Dashboard sind nicht Teil dieses Ordners.
+Goal 1 of the project: explain the European drivers of the CH day-ahead price and forecast it 24 h
+ahead with an **nMAE below 10 %**.
+The calculator and the dashboard are not part of this folder.
 
-## Ablauf
+## Workflow
 
-| Schritt | Skript | Ergebnis |
+| Step | Script | Result |
 |---|---|---|
-| 1 Datenpipeline | `01_fetch_data.py` | `data/processed/hourly.csv` (Preise, Erzeugung, Prognosen, Austausch, Wetter; stündlich, UTC) |
-| 2 EDA / Preistreiber | `02_eda.py` | `output/eda/` (Grafiken, Korrelationen, `summary.md`) |
-| 3 Features & Baselines | `03_baseline.py` | `output/baseline/` (Persistenz, Profil, Ridge) |
-| 4 LightGBM, Tuning, SHAP | `04_model.py` | `output/model/` (Metriken, Grafiken, SHAP, gespeichertes Modell) |
-| 5 Rollende 24h-Prognose | `05_forecast.py` | `web/public/forecast/forecast.json` → Dashboard unter `/analyse` |
-| 6 Zielwert-Analyse nMAE | `06_zielwert.py` | `output/zielwert/` (Volatilität 2015–2026, naive nMAE je Jahr/Monat, rMAE vs. Literatur) |
+| 1 Data pipeline | `01_fetch_data.py` | `data/processed/hourly.csv` (prices, generation, forecasts, exchange, weather; hourly, UTC) |
+| 2 EDA / price drivers | `02_eda.py` | `output/eda/` (charts, correlations, `summary.md`) |
+| 3 Features & baselines | `03_baseline.py` | `output/baseline/` (persistence, profile, ridge) |
+| 4 LightGBM, tuning, SHAP | `04_model.py` | `output/model/` (metrics, charts, SHAP, saved model) |
+| 5 Rolling 24h forecast | `05_forecast.py` | `web/public/forecast/forecast.json` → dashboard at `/analysis` |
+| 6 Target value analysis nMAE | `06_target_value.py` | `output/target_value/` (volatility 2015–2026, naive nMAE by year/month, rMAE vs. literature) |
 
-Quellen für den Bericht: [`QUELLEN.txt`](QUELLEN.txt).
+Sources for the report: [`SOURCES.txt`](SOURCES.txt).
 
 ```bash
 cd analysis
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-# macOS: LightGBM braucht OpenMP →  brew install libomp
-.venv/bin/python 01_fetch_data.py   # dauert wegen Rate-Limit von energy-charts (HTTP 429) eine Weile; Cache in data/raw/
+# macOS: LightGBM needs OpenMP →  brew install libomp
+.venv/bin/python 01_fetch_data.py   # takes a while due to the energy-charts rate limit (HTTP 429); cache in data/raw/
 .venv/bin/python 02_eda.py
 .venv/bin/python 03_baseline.py
-.venv/bin/python 04_model.py        # --trials N für die Grösse der Hyperparameter-Suche
-.venv/bin/python 05_forecast.py     # nach 01: Prognose ab jetzt für 24 h (--now "YYYY-MM-DD HH:MM" für einen anderen Zeitpunkt)
-.venv/bin/python 06_zielwert.py     # nach 04: lädt CH-Preise ab 2015 (eigener Cache) und begründet den Zielwert
+.venv/bin/python 04_model.py        # --trials N for the size of the hyperparameter search
+.venv/bin/python 05_forecast.py     # after 01: forecast from now for 24 h (--now "YYYY-MM-DD HH:MM" for a different point in time)
+.venv/bin/python 06_target_value.py # after 04: loads CH prices from 2015 (own cache) and justifies the target value
 ```
 
-Das Dashboard (`web/src/app/pages/analysis/`) liest nur `web/public/forecast/forecast.json`. Diese Datei wird mit
-der Website ausgeliefert, also für eine neue Prognose 01 + 05 ausführen und die Datei neu deployen. Sie deckt
-jetzt + 30 h ab: Das Dashboard rückt die 24-h-Simulation mit der Uhr nach und bleibt so bis 6 h nach dem Lauf
-aktuell. Der CH-Day-Ahead-Preis ist ein Stundenpreis; in der 15-min-Ansicht hat jede Stunde vier gleiche Werte.
+The dashboard (`web/src/app/pages/analysis/`) only reads `web/public/forecast/forecast.json`. This file is shipped
+with the website, so for a new forecast run 01 + 05 and redeploy the file. It covers
+now + 30 h: the dashboard advances the 24 h simulation with the clock and thus stays current until 6 h after the run.
+The CH day-ahead price is an hourly price; in the 15 min view every hour has four identical values.
 
-## Methode
+## Method
 
-**Prognosesituation.** Am Vortag D-1 vor dem Gebotsschluss werden die 24 Stundenpreise von Tag D
-vorhergesagt. Damit kein Leakage entsteht, gilt Folgendes:
-- Preise (CH, DE, FR, IT-Nord, AT) gehen nur als Lags ≥ 24 h ein (24/48/72/168 h, Vortagesmittel, 7-Tage-Mittel).
-- Ist-Erzeugung und Austausch gehen nur mit Lag ≥ 48 h ein.
-- Für Stunde t dürfen direkt die Day-Ahead-Prognosen der Netzbetreiber (Solar, Wind, Last, daraus die
-  prognostizierte Residuallast) und die Wetterprognosen des Vortageslaufs (Open-Meteo `previous_day1`) verwendet werden.
-- Dazu kommen Kalender-Features: Stunde, Wochentag, Wochenende, Feiertag sowie Monat und Tag im Jahr (Sinus/Kosinus).
+**Forecast situation.** On the previous day D-1, before gate closure, the 24 hourly prices of day D
+are predicted. To avoid leakage, the following applies:
+- Prices (CH, DE, FR, IT-North, AT) only enter as lags ≥ 24 h (24/48/72/168 h, previous-day mean, 7-day mean).
+- Actual generation and exchange only enter with a lag ≥ 48 h.
+- For hour t, the day-ahead forecasts of the grid operators (solar, wind, load, and the forecast residual
+  load derived from them) and the weather forecasts of the previous-day run (Open-Meteo `previous_day1`) may be used directly.
+- In addition there are calendar features: hour, weekday, weekend, public holiday, as well as month and day of year (sine/cosine).
 
-**Metrik.** `nMAE = MAE / mittlerer Absolutpreis`. Einen MAPE kann man bei Preisen um 0 bzw. bei
-negativen Preisen nicht sinnvoll berechnen. Ergänzend `rMAE = MAE_Modell / MAE_Persistenz-168-h`
-(Lago et al. 2021): Der rMAE ist zwischen Perioden vergleichbar, der nMAE nicht (siehe „Zielwert“).
+**Metric.** `nMAE = MAE / mean absolute price`. A MAPE cannot be computed meaningfully for prices around 0 or
+negative prices. Additionally `rMAE = MAE_model / MAE_persistence-168-h`
+(Lago et al. 2021): the rMAE is comparable between periods, the nMAE is not (see "Target value").
 
-**Zielwert (`06_zielwert.py`).** Der nMAE hängt stark davon ab, wie stark die Preise in der
-Auswertungsperiode schwanken. Die naive Wochen-Persistenz kommt 2015–2026 je Jahr auf 14–25 %
-(Ø 17.6 %), je Monat auf 7–46 %. Im Holdout liegt sie bei 17.7 %, also genau im langjährigen Mittel.
-State-of-the-art-Modelle erreichen laut Lago et al. (2021) einen rMAE von 0.38–0.68. Bei
-durchschnittlicher Volatilität entspricht das einem nMAE von 6.7–12.0 %. **nMAE < 10 %** entspricht
-einem rMAE von ≈ 0.57. Das Ziel ist damit anspruchsvoll, aber realistisch. Es gilt nur über
-≥ 12 Monate (ganzer Saisonzyklus) und nur mit dem rMAE als Kontrolle.
+**Target value (`06_target_value.py`).** The nMAE depends strongly on how much prices fluctuate in the
+evaluation period. Naive weekly persistence reaches 14–25 % per year in 2015–2026
+(avg. 17.6 %), and 7–46 % per month. In the holdout it is 17.7 %, i.e. exactly at the long-term mean.
+According to Lago et al. (2021), state-of-the-art models achieve an rMAE of 0.38–0.68. With
+average volatility this corresponds to an nMAE of 6.7–12.0 %. **nMAE < 10 %** corresponds to
+an rMAE of ≈ 0.57. The goal is therefore demanding but realistic. It only holds over
+≥ 12 months (full seasonal cycle) and only with the rMAE as a check.
 
-**Validierung.**
-- Tuning: Zufallssuche mit `TimeSeriesSplit` (5 Folds à 60 Tage, 24 h Lücke) auf den Daten vor dem 1.10.2025.
-- Holdout ab 1.10.2025 als Walk-Forward: Für jeden Monat wird mit allen Daten davor neu trainiert. Es wird nie zufällig gemischt.
+**Validation.**
+- Tuning: random search with `TimeSeriesSplit` (5 folds of 60 days, 24 h gap) on the data before 1 Oct 2025.
+- Holdout from 1 Oct 2025 as walk-forward: for each month the model is retrained on all data before it. Data is never shuffled randomly.
 
-**Erklärung.** SHAP-Werte (TreeExplainer) je Stundenprognose, zusätzlich zu Treibergruppen
-zusammengefasst (Preisniveau, Nachbarpreise, Solar, Wind, Last/Residuallast, Wasserkraft/Austausch, Kalender).
+**Explanation.** SHAP values (TreeExplainer) per hourly forecast, additionally aggregated into driver groups
+(price level, neighbouring prices, solar, wind, load/residual load, hydro/exchange, calendar).
 
-**Zielgrösse des Modells.** LightGBM sagt die Änderung gegenüber dem Vortagespreis zur selben Stunde voraus
-(`y − lag_ch_24`). Der Grund: Das Preisniveau stieg von Ø 76 EUR/MWh (2024) auf Ø 128 EUR/MWh (2026), und
-Baum-Modelle können nicht extrapolieren. Die wichtigsten Features sind deshalb ebenfalls Änderungen gegenüber
-dem Vortag (`*_d24`), z. B. der Unterschied in der prognostizierten Residuallast. Diese Wahl wurde per
-Cross-Validation vor dem Holdout getroffen (CV-MAE 11.7 → 9.9 EUR/MWh).
+**Model target.** LightGBM predicts the change relative to the previous day's price at the same hour
+(`y − lag_ch_24`). The reason: the price level rose from avg. 76 EUR/MWh (2024) to avg. 128 EUR/MWh (2026), and
+tree models cannot extrapolate. The most important features are therefore also changes relative to
+the previous day (`*_d24`), e.g. the difference in forecast residual load. This choice was made via
+cross-validation before the holdout (CV MAE 11.7 → 9.9 EUR/MWh).
 
-## Ergebnisse (Stand 22.10.2026)
+## Results (as of 22 Oct 2026)
 
-Holdout 01.10.2025 – 23.10.2026 (9'312 Stunden, Ø Absolutpreis 126 EUR/MWh):
+Holdout 01 Oct 2025 – 23 Oct 2026 (9,312 hours, avg. absolute price 126 EUR/MWh):
 
-| Modell | MAE [EUR/MWh] | nMAE |
+| Model | MAE [EUR/MWh] | nMAE |
 |---|---:|---:|
 | **LightGBM** | **10.99** | **8.7 %** |
-| LightGBM ohne Netzbetreiber-Prognosen (nur Wetter) | 13.06 | 10.3 % |
-| Ridge-Regression (gleiche Features) | 12.82 | 10.2 % |
-| Profil 14 Tage (heutiger Fallback im Rechner) | 18.10 | 14.3 % |
-| Persistenz 24 h (Baseline) | 18.15 | 14.4 % |
+| LightGBM without grid operator forecasts (weather only) | 13.06 | 10.3 % |
+| Ridge regression (same features) | 12.82 | 10.2 % |
+| Profile 14 days (current fallback in the calculator) | 18.10 | 14.3 % |
+| Persistence 24 h (baseline) | 18.15 | 14.4 % |
 
-- **Ziel nMAE < 10 % erreicht.** Der Fehler liegt 39 % unter der Persistenz-Baseline. Der rMAE
-  gegenüber der Wochen-Persistenz beträgt 0.49 (ohne Netzbetreiber-Prognosen 0.58). Das liegt im
-  State-of-the-art-Bereich von Lago et al. (2021): 0.38–0.68.
-- Winter: 4–6 %. Frühling/Sommer: 9–18 %, der schwierigste Monat ist April 2026. Fehler entstehen vor allem durch
-  Mittags-Preiseinbrüche mit stark negativen Preisen bei viel Solar über Feiertage/Wochenenden. Das Modell
-  trifft die Richtung, aber nicht die volle Tiefe (siehe `output/model/02_beispielwochen.png`).
-- Die wichtigsten Treiber laut SHAP:
-  1. die prognostizierte Residuallast (DE+CH+FR+IT+AT) und ihre Änderung gegenüber dem Vortag,
-  2. das Vortagesniveau (mit Rückkehr zum Mittel),
-  3. die Nachbarpreise,
-  4. Wasserkraft/Austausch, Wind und Solar.
+- **Goal nMAE < 10 % achieved.** The error is 39 % below the persistence baseline. The rMAE
+  relative to weekly persistence is 0.49 (without grid operator forecasts 0.58). This is within the
+  state-of-the-art range of Lago et al. (2021): 0.38–0.68.
+- Winter: 4–6 %. Spring/summer: 9–18 %, the hardest month is April 2026. Errors arise mainly from
+  midday price drops with strongly negative prices during high solar over holidays/weekends. The model
+  gets the direction right, but not the full depth (see `output/model/02_example_weeks.png`).
+- The most important drivers according to SHAP:
+  1. the forecast residual load (DE+CH+FR+IT+AT) and its change relative to the previous day,
+  2. the previous-day level (with mean reversion),
+  3. the neighbouring prices,
+  4. hydro/exchange, wind and solar.
 
-**Einschränkungen**
-- Die Day-Ahead-Prognosen der Netzbetreiber werden laut ENTSO-E-Regeln teils erst bis 18:00 am Vortag publiziert.
-  Wird vor dem CH-Gebotsschluss (11:00) prognostiziert, ist nicht jede Reihe garantiert schon da. Die Variante
-  „ohne Netzbetreiber-Prognosen“ (10.3 %) ist deshalb die konservative Untergrenze.
-- Der CH-Day-Ahead-Preis wird auf energy-charts auch nach dem 1.10.2025 stündlich ausgewiesen. Für einen
-  15-min-Tarif (EKZ) gilt die Prognose deshalb je Stunde.
-- Gaspreise (TTF) und CO₂-Preise sind nicht frei per API verfügbar. Sie stecken nur indirekt im Preisniveau der Vortage.
+**Limitations**
+- According to ENTSO-E rules, the grid operators' day-ahead forecasts are partly only published by 18:00 on the previous day.
+  If the forecast is made before CH gate closure (11:00), not every series is guaranteed to be available yet. The variant
+  "without grid operator forecasts" (10.3 %) is therefore the conservative lower bound.
+- On energy-charts the CH day-ahead price is still reported hourly after 1 Oct 2025. For a
+  15 min tariff (EKZ) the forecast therefore applies per hour.
+- Gas prices (TTF) and CO₂ prices are not freely available via API. They are only indirectly reflected in the price level of previous days.
 
 Details: `output/eda/summary.md`, `output/baseline/summary.md`, `output/model/summary.md`.
-Das finale Modell (auf allen Daten trainiert) liegt in `output/model/lgbm_ch_dayahead.txt`
-(Basis und Feature-Liste in `feature_columns.json`).
+The final model (trained on all data) is in `output/model/lgbm_ch_dayahead.txt`
+(base and feature list in `feature_columns.json`).

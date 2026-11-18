@@ -1,11 +1,11 @@
 // =============================================================
-// AI-EMS – Globale Styles
+// AI-EMS – global styles
 // =============================================================
 @use 'tokens' as *;
 
-// ---------- Theme (Hell / Dunkel) ----------
-// Das Attribut data-theme setzt ein Inline-Skript in index.html vor dem Start der App
-// (gespeicherte Wahl oder Systemeinstellung); der ThemeToggle ändert es zur Laufzeit.
+// ---------- Theme (light / dark) ----------
+// The data-theme attribute is set by an inline script in index.html before the app starts
+// (stored choice or system setting); the ThemeToggle changes it at runtime.
 :root {
   color-scheme: light;
   --surface: #ffffff;
@@ -21,7 +21,7 @@
   --accent: #0071e3;
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
 
-  // Charts – validierte Dataviz-Palette, je Modus eigene Stufen
+  // Charts – validated dataviz palette, separate shades per mode
   --s1: #2a78d6;
   --s2: #eb6834;
   --s3: #1baf7a;
@@ -81,9 +81,9 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-// Sanftes Scrollen wird erst nach dem Laden aktiviert (siehe App-Komponente):
-// Während des Seitenaufbaus würde die laufende Scroll-Animation den Sprung zu
-// einem Anker aus der URL überschreiben – Deep-Links landeten dann am Seitenanfang.
+// Smooth scrolling is only enabled after loading (see app component):
+// while the page is building, the running scroll animation would override the jump to
+// an anchor from the URL – deep links would then land at the top of the page.
 html.is-ready {
   scroll-behavior: smooth;
 }
@@ -121,7 +121,7 @@ ol {
   list-style-position: inside;
 }
 
-// ---------- Typografie ----------
+// ---------- Typography ----------
 h1,
 h2,
 h3,
@@ -303,8 +303,8 @@ h4 {
   }
 }
 
-// ---------- Scroll-Reveal-Animationen ----------
-// Wird durch die RevealDirective (IntersectionObserver) gesteuert.
+// ---------- Scroll reveal animations ----------
+// Controlled by the RevealDirective (IntersectionObserver).
 .reveal {
   opacity: 0;
   will-change: opacity, transform;
@@ -345,7 +345,7 @@ h4 {
   }
 }
 
-// ---------- Karten ----------
+// ---------- Cards ----------
 .card {
   background: $surface-raised;
   border-radius: $radius-md;
@@ -360,10 +360,10 @@ h4 {
 }
 
 // =============================================================
-// AI-EMS – Ergänzungen: Kennzahlen, Formulare, Charts
+// AI-EMS – additions: key figures, forms, charts
 // =============================================================
 
-// ---------- Kennzahlen (Stat-Tiles) ----------
+// ---------- Key figures (stat tiles) ----------
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -419,7 +419,7 @@ h4 {
   color: $color-gray-400;
 }
 
-// ---------- Chart-Karten ----------
+// ---------- Chart cards ----------
 .chart-card {
   min-width: 0;
   padding: $spacing-6 $spacing-5;
@@ -465,7 +465,7 @@ h4 {
   color: $color-gray-400;
 }
 
-// ---------- Formulare (Rechner) ----------
+// ---------- Forms (calculator) ----------
 .field {
   display: flex;
   flex-direction: column;
@@ -554,7 +554,7 @@ select {
   }
 }
 
-// ---------- Lade- & Fehlerzustand ----------
+// ---------- Loading & error state ----------
 .state {
   padding: $spacing-8 $spacing-5;
   text-align: center;
@@ -566,7 +566,7 @@ select {
   color: #b42318;
 }
 
-// ---------- Fliesstext-Listen ----------
+// ---------- Body text lists ----------
 .prose {
   p + p {
     margin-top: $spacing-4;

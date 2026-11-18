@@ -1,15 +1,15 @@
 import { Component, inject } from '@angular/core';
 import { ThemeService } from '../core/theme.service';
 
-/** Sonne/Mond-Knopf zum Umschalten zwischen Hell- und Dunkelmodus. */
+/** Sun/moon button to toggle between light and dark mode. */
 @Component({
   selector: 'app-theme-toggle',
   template: `
     <button
       type="button"
       class="theme-toggle"
-      [attr.aria-label]="theme.theme() === 'dark' ? 'Hellen Modus aktivieren' : 'Dunklen Modus aktivieren'"
-      [attr.title]="theme.theme() === 'dark' ? 'Heller Modus' : 'Dunkler Modus'"
+      [attr.aria-label]="theme.theme() === 'dark' ? 'Activate light mode' : 'Activate dark mode'"
+      [attr.title]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'"
       (click)="theme.toggle()"
     >
       @if (theme.theme() === 'dark') {

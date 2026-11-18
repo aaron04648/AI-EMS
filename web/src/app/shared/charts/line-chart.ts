@@ -29,7 +29,7 @@ interface Tick {
 
 const PAD = { top: 12, right: 12, bottom: 28, left: 48 };
 
-/** Rundet einen Wertebereich auf „schöne“ Achsenwerte. */
+/** Rounds a value range to "nice" axis values. */
 function niceTicks(lo: number, hi: number, count = 5): number[] {
   if (lo === hi) {
     hi = lo + 1;
@@ -46,9 +46,9 @@ function niceTicks(lo: number, hi: number, count = 5): number[] {
 }
 
 /**
- * Linien- bzw. gestapeltes Flächendiagramm als SVG.
- * Eine gemeinsame y-Achse (nie zwei Skalen), Crosshair-Tooltip beim Hover,
- * Legende ab zwei Reihen.
+ * Line or stacked area chart as SVG.
+ * One shared y-axis (never two scales), crosshair tooltip on hover,
+ * legend from two series upwards.
  */
 @Component({
   selector: 'app-line-chart',
@@ -72,12 +72,12 @@ function niceTicks(lo: number, hi: number, count = 5): number[] {
         (pointermove)="onMove($event)"
         (pointerleave)="hover.set(null)"
       >
-        <!-- Hervorgehobene Zeitfenster -->
+        <!-- Highlighted time windows -->
         @for (b of bandRects(); track b.x) {
           <rect class="band" [attr.x]="b.x" [attr.y]="pad.top" [attr.width]="b.w" [attr.height]="innerH()" [style.fill]="bandColor()" />
         }
 
-        <!-- Raster & y-Achse -->
+        <!-- Grid & y-axis -->
         @for (t of yTicks(); track t.label) {
           <line class="grid" [attr.x1]="pad.left" [attr.x2]="width() - pad.right" [attr.y1]="t.pos" [attr.y2]="t.pos" />
           <text class="tick tick--y" [attr.x]="pad.left - 8" [attr.y]="t.pos">{{ t.label }}</text>
@@ -86,12 +86,12 @@ function niceTicks(lo: number, hi: number, count = 5): number[] {
           <line class="baseline" [attr.x1]="pad.left" [attr.x2]="width() - pad.right" [attr.y1]="zeroY()" [attr.y2]="zeroY()" />
         }
 
-        <!-- x-Achse -->
+        <!-- x-axis -->
         @for (t of xTickPos(); track $index) {
           <text class="tick tick--x" [attr.x]="t.pos" [attr.y]="height() - 8">{{ t.label }}</text>
         }
 
-        <!-- Daten -->
+        <!-- Data -->
         @for (p of paths(); track p.name) {
           @if (p.area) {
             <path class="area" [attr.d]="p.area" [style.fill]="p.color" [class.area--stacked]="stacked()" />
@@ -127,7 +127,7 @@ function niceTicks(lo: number, hi: number, count = 5): number[] {
 })
 export class LineChart {
   readonly series = input.required<ChartSeries[]>();
-  /** x-Werte (z. B. unix-Sekunden oder Stunde 0–23) – gleiche Länge wie die Reihen */
+  /** x values (e.g. unix seconds or hour 0–23) – same length as the series */
   readonly x = input.required<number[]>();
   readonly xFormat = input<(v: number) => string>((v) => String(v));
   readonly tooltipTitle = input<((v: number) => string) | null>(null);
@@ -161,7 +161,7 @@ export class LineChart {
   protected readonly innerW = computed(() => this.width() - PAD.left - PAD.right);
   protected readonly innerH = computed(() => this.height() - PAD.top - PAD.bottom);
 
-  /** Für gestapelte Flächen: kumulierte Ober- und Unterkanten je Reihe. */
+  /** For stacked areas: cumulative upper and lower edges per series. */
   private readonly layers = computed(() => {
     const series = this.series();
     const n = this.x().length;
@@ -289,7 +289,7 @@ export class LineChart {
       .map((l) => ({ name: l.s.name, color: l.s.color, raw: l.s.values[idx] }))
       .filter((r) => r.raw != null)
       .map((r) => ({ ...r, value: `${fmt(r.raw, this.digits())} ${this.unit()}`.trim() }));
-    // gestapelt: oberste Fläche zuerst – wie im Diagramm
+    // stacked: top area first – as in the chart
     return { x: sx(xs[idx]), title, dots, rows: this.stacked() ? rows.reverse() : rows };
   });
 
@@ -302,7 +302,7 @@ export class LineChart {
     const x0 = xs[0];
     const span = xs[xs.length - 1] - x0 || 1;
     const value = x0 + ((px - PAD.left) / this.innerW()) * span;
-    // nächstgelegener x-Wert (x ist aufsteigend sortiert)
+    // nearest x value (x is sorted ascending)
     let lo = 0;
     let hi = xs.length - 1;
     while (hi - lo > 1) {

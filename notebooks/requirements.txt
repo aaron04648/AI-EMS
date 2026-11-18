@@ -8,3 +8,6 @@ nbformat==5.10.4
 nbclient==0.10.2
 ipykernel==6.30.1
 nbconvert==7.16.6
+scikit-learn==1.9.1
+holidays==0.107
+xgboost==3.4.1

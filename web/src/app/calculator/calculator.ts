@@ -11,9 +11,9 @@ import { Place, SimulationRequest, SimulationResult, StrategyKey } from './calcu
 import { TariffBoard } from './tariff-board';
 import { WeatherMap } from './weather-map';
 
-export type View = 'meteo' | 'boerse' | 'statistik';
+export type View = 'meteo' | 'exchange' | 'statistics';
 
-/** Formularwerte in Anzeige-Einheiten (Prozent statt Anteil) */
+/** Form values in display units (percent instead of share) */
 interface Form {
   place: Place;
   kwp: number;
@@ -37,7 +37,7 @@ interface Form {
 }
 
 const DEFAULTS: Form = {
-  place: { label: 'Zürich (ZH)', lat: 47.3769, lon: 8.5417 },
+  place: { label: 'Zurich (ZH)', lat: 47.3769, lon: 8.5417 },
   kwp: 10,
   tilt: 30,
   azimuth: 0,
@@ -58,21 +58,21 @@ const DEFAULTS: Form = {
   days: 3,
 };
 
-const STORAGE_KEY = 'ai-ems-rechner';
+const STORAGE_KEY = 'ai-ems-calculator';
 
 export const ORIENTATIONS = [
-  { label: 'Ost', value: -90 },
-  { label: 'Südost', value: -45 },
-  { label: 'Süd', value: 0 },
-  { label: 'Südwest', value: 45 },
+  { label: 'East', value: -90 },
+  { label: 'Southeast', value: -45 },
+  { label: 'South', value: 0 },
+  { label: 'Southwest', value: 45 },
   { label: 'West', value: 90 },
 ];
 
 const STRATEGIES: { key: StrategyKey; label: string; note: string }[] = [
-  { key: 'none', label: 'Ohne Batterie', note: 'nur PV' },
-  { key: 'rbc', label: 'Eigenverbrauchsregel', note: 'RBC, Paper 3.5.2' },
-  { key: 'mpc', label: 'MPC', note: 'Prognosen, alle 15 min neu optimiert' },
-  { key: 'optimal', label: 'Optimum', note: 'theoretisch, perfekte Voraussicht' },
+  { key: 'none', label: 'No battery', note: 'PV only' },
+  { key: 'rbc', label: 'Self-consumption rule', note: 'RBC, paper 3.5.2' },
+  { key: 'mpc', label: 'MPC', note: 'forecasts, re-optimised every 15 min' },
+  { key: 'optimal', label: 'Optimum', note: 'theoretical, perfect foresight' },
 ];
 
 
@@ -91,8 +91,8 @@ export class Calculator implements OnDestroy {
   protected readonly view = signal<View>('meteo');
   protected readonly views: { key: View; label: string }[] = [
     { key: 'meteo', label: 'Meteo' },
-    { key: 'boerse', label: 'Börse' },
-    { key: 'statistik', label: 'Statistik' },
+    { key: 'exchange', label: 'Exchange' },
+    { key: 'statistics', label: 'Statistics' },
   ];
   protected readonly formatDay = formatDay;
   protected readonly formatDayTime = formatDayTime;
@@ -105,7 +105,7 @@ export class Calculator implements OnDestroy {
   protected readonly elapsed = signal(0);
   protected readonly sidebarOpen = signal(false);
 
-  // ---------- Ortssuche ----------
+  // ---------- Location search ----------
   protected readonly query = signal('');
   protected readonly suggestions = signal<Place[]>([]);
   private searchTimer?: ReturnType<typeof setTimeout>;
@@ -116,7 +116,7 @@ export class Calculator implements OnDestroy {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.form()));
       } catch {
-        // Speichern ist nur eine Komfortfunktion
+        // Saving is only a convenience feature
       }
     });
   }
@@ -174,7 +174,7 @@ export class Calculator implements OnDestroy {
     this.suggestions.set([]);
   }
 
-  // ---------- Berechnung ----------
+  // ---------- Calculation ----------
   private request(): SimulationRequest {
     const f = this.form();
     return {
@@ -218,19 +218,19 @@ export class Calculator implements OnDestroy {
         const detail = body?.detail;
         throw new Error(
           res.status === 404 || res.status === 405
-            ? 'Das Backend ist hier nicht verfügbar. Der Rechner läuft in der Docker- oder Kubernetes-Umgebung (nicht auf GitHub Pages).'
+            ? 'The backend is not available here. The calculator runs in the Docker or Kubernetes environment (not on GitHub Pages).'
             : typeof detail === 'string'
               ? detail
               : Array.isArray(detail)
                 ? detail.map((d: { msg: string }) => d.msg).join(', ')
-                : `Fehler ${res.status}`,
+                : `Error ${res.status}`,
         );
       }
       this.result.set(await res.json());
     } catch (err) {
       this.error.set(
         err instanceof TypeError
-          ? 'Das Backend ist nicht erreichbar. Läuft der API-Container?'
+          ? 'The backend is unreachable. Is the API container running?'
           : (err as Error).message,
       );
     } finally {
@@ -239,7 +239,7 @@ export class Calculator implements OnDestroy {
     }
   }
 
-  // ---------- Fahrplan ----------
+  // ---------- Schedule ----------
   protected readonly plan = computed(() => {
     const r = this.result();
     if (!r) return null;
@@ -248,13 +248,13 @@ export class Calculator implements OnDestroy {
 
     const action = (i: number): Action => actionAt(p, i);
 
-    // zusammenhängende Blöcke gleicher Aktion
+    // contiguous blocks of the same action
     const blocks: { action: Action; from: number; to: number; priceSum: number; energy: number; n: number }[] = [];
     x.forEach((t, i) => {
       const a = action(i);
       const energy = (p.charge[i] + p.discharge[i]) * 0.25;
       const last = blocks[blocks.length - 1];
-      // Massgebender Preis: beim Verkaufen und Laden mit Solarstrom die (entgangene) Einspeisevergütung
+      // Relevant price: when selling and charging with solar power, the (forgone) feed-in remuneration
       const price = a === 'sell' || a === 'solarCharge' ? p.price_export[i] : p.price_import[i];
       if (last && last.action === a) {
         last.to = t + p.step;
@@ -282,16 +282,16 @@ export class Calculator implements OnDestroy {
       cost: p.cost_chf,
       publishedUntil: p.published_until,
       prices: [
-        { name: 'Bezug EKZ Dynamisch', color: SLOT[0], values: p.price_import },
-        { name: 'Einspeisung', color: SLOT[1], values: p.price_export },
+        { name: 'Import EKZ dynamic', color: SLOT[0], values: p.price_import },
+        { name: 'Feed-in', color: SLOT[1], values: p.price_export },
       ] as ChartSeries[],
       power: [
-        { name: 'PV-Prognose', color: SLOT[3], values: p.pv },
-        { name: 'Verbrauch', color: SLOT[4], values: p.load },
-        { name: 'Batterie (+ laden / – entladen)', color: SLOT[2], values: p.charge.map((c, i) => c - p.discharge[i]) },
-        { name: 'Netz (+ Bezug / – Einspeisung)', color: SLOT[0], values: p.grid_import.map((g, i) => g - p.grid_export[i]) },
+        { name: 'PV forecast', color: SLOT[3], values: p.pv },
+        { name: 'Consumption', color: SLOT[4], values: p.load },
+        { name: 'Battery (+ charge / – discharge)', color: SLOT[2], values: p.charge.map((c, i) => c - p.discharge[i]) },
+        { name: 'Grid (+ import / – feed-in)', color: SLOT[0], values: p.grid_import.map((g, i) => g - p.grid_export[i]) },
       ] as ChartSeries[],
-      soc: [{ name: 'Ladestand', color: SLOT[2], values: p.soc }] as ChartSeries[],
+      soc: [{ name: 'State of charge', color: SLOT[2], values: p.soc }] as ChartSeries[],
     };
   });
 
@@ -306,7 +306,7 @@ export class Calculator implements OnDestroy {
     const socPct = (k: StrategyKey) => s[k].series.soc.map((v) => (v / cap) * 100);
 
     const costs: BarRow[] = [
-      { label: 'Ohne PV & Batterie', value: b.no_pv_cost_chf, note: 'nur Netzbezug' },
+      { label: 'No PV & battery', value: b.no_pv_cost_chf, note: 'grid import only' },
       ...STRATEGIES.map((st) => ({
         label: st.label,
         value: s[st.key].cost_adjusted_chf,
@@ -326,22 +326,22 @@ export class Calculator implements OnDestroy {
       mpc,
       savingVsNone: s.none.cost_adjusted_chf - mpc,
       savingVsRbc: s.rbc.cost_adjusted_chf - mpc,
-      // Anteil des theoretisch möglichen Vorteils, den die MPC erreicht
+      // Share of the theoretically possible advantage that the MPC achieves
       efficiency: gap !== 0 ? (mpc - b.no_pv_cost_chf) / gap : null,
       yearFactor,
       pvMae: b.pv_forecast_mae_kw,
       soc: [
-        { name: 'Eigenverbrauchsregel', color: SLOT[1], values: socPct('rbc') },
+        { name: 'Self-consumption rule', color: SLOT[1], values: socPct('rbc') },
         { name: 'MPC', color: SLOT[0], values: socPct('mpc') },
         { name: 'Optimum', color: SLOT[2], values: socPct('optimal') },
       ] as ChartSeries[],
       pv: [
-        { name: 'Ist (MeteoSwiss-Messung)', color: SLOT[3], values: b.pv_actual },
-        { name: 'Prognose vom Vortag (ICON-CH2)', color: SLOT[0], values: b.pv_forecast },
+        { name: 'Actual (MeteoSwiss measurement)', color: SLOT[3], values: b.pv_actual },
+        { name: 'Previous-day forecast (ICON-CH2)', color: SLOT[0], values: b.pv_forecast },
       ] as ChartSeries[],
       prices: [
-        { name: 'Bezug EKZ Dynamisch', color: SLOT[0], values: b.price_import },
-        { name: 'Einspeisung', color: SLOT[1], values: b.price_export },
+        { name: 'Import EKZ dynamic', color: SLOT[0], values: b.price_import },
+        { name: 'Feed-in', color: SLOT[1], values: b.price_export },
       ] as ChartSeries[],
       table: STRATEGIES.map((st) => ({ ...st, ...s[st.key] })),
     };
@@ -350,8 +350,8 @@ export class Calculator implements OnDestroy {
   protected readonly monthly = computed<BarRow[]>(() => {
     const r = this.result();
     if (!r) return [];
-    const names = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    return r.pv_model.monthly_kwh.map((v, i) => ({ label: names[i], value: v, note: `${names[i]} · Ø Monatsertrag` }));
+    const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return r.pv_model.monthly_kwh.map((v, i) => ({ label: names[i], value: v, note: `${names[i]} · avg. monthly yield` }));
   });
 
   protected readonly orientationLabel = computed(() => {
@@ -365,11 +365,11 @@ export class Calculator implements OnDestroy {
   }
 
   protected readonly hourTick = (t: number) => formatTime(t);
-  /** Achsenbeschriftung über mehrere Tage: „Fr 12:00“ */
+  /** Axis label over several days: "Fri 12:00" */
   protected readonly dayHourTick = (t: number) =>
-    new Date(t * 1000).toLocaleString('de-CH', { timeZone: 'Europe/Zurich', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    new Date(t * 1000).toLocaleString('en-CH', { timeZone: 'Europe/Zurich', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 
-  /** PV-Prognose des Fahrplans für die Wetterkarte */
+  /** PV forecast of the schedule for the weather map */
   protected readonly pvSeries = computed(() => {
     const r = this.result();
     return r ? { start: r.plan.start, step: r.plan.step, values: r.plan.pv } : null;
