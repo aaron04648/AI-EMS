@@ -34,10 +34,10 @@ def test_battery_lowers_cost():
 def test_no_grid_charging_respected():
     plan = solve(np.zeros(N), LOAD, PRICE, EXPORT, 1, 8, Battery(10, 5), Grid(allow_grid_charging=False))
     assert np.all(plan.grid_import <= LOAD + 1e-6)
-    assert plan.charge.sum() < 1e-6  # ohne PV kann nichts geladen werden – Endziel weich verfehlt
+    assert plan.charge.sum() < 1e-6  # without PV nothing can be charged – terminal target softly missed
 
 
 def test_terminal_value_rewards_extra_energy():
-    # Hohe Gutschrift für Energie am Ende → Batterie wird voll geladen
+    # High credit for energy at the end → battery is fully charged
     plan = solve(PV, LOAD, PRICE, EXPORT, 5, 5, Battery(10, 5), Grid(), terminal_value=(100.0, 200.0))
     assert plan.soc[-1] > 9.9

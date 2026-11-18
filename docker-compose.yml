@@ -1,4 +1,4 @@
-# Lokale Docker-Umgebung:  docker compose up --build  →  http://localhost:8080 (Port via WEB_PORT änderbar)
+# Local Docker environment:  docker compose up --build  →  http://localhost:8080 (port configurable via WEB_PORT)
 services:
   web:
     build: ./web

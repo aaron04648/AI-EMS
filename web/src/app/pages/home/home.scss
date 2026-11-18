@@ -53,7 +53,7 @@
   pointer-events: none;
 }
 
-// ---------- Live-Karte ----------
+// ---------- Live card ----------
 .live {
   width: 100%;
   max-width: 920px;
@@ -150,7 +150,7 @@
   }
 }
 
-// ---------- Treiber ----------
+// ---------- Drivers ----------
 .drivers {
   display: grid;
   grid-template-columns: 1fr;
@@ -200,7 +200,7 @@
   text-align: center;
 }
 
-// ---------- Europa ----------
+// ---------- Europe ----------
 .europe {
   display: grid;
   grid-template-columns: 1fr;
@@ -223,7 +223,7 @@
   gap: $spacing-4;
 }
 
-// ---------- Schritte ----------
+// ---------- Steps ----------
 .steps {
   list-style: none;
   display: grid;

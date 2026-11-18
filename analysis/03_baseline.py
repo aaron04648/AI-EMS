@@ -1,14 +1,14 @@
-"""Schritt 03 – Feature Engineering & Baselines: die Messlatte für den MAE.
+"""Step 03 – feature engineering & baselines: the benchmark for the MAE.
 
-Baut die Feature-Matrix (features.py), speichert sie unter data/processed/features.csv und
-bewertet einfache Referenzmodelle auf dem Holdout (ab TEST_START):
-  * Persistenz 24 h   – Preis morgen = Preis heute zur selben Stunde
-  * Persistenz 168 h  – Preis morgen = Preis vor einer Woche zur selben Stunde
-  * Profil 14 Tage    – Mittel derselben Stunde der letzten 14 Tage, getrennt Werktag/Wochenende
-                        (entspricht der heutigen Fallback-Prognose im Rechner, api/app/models/tariff_forecast.py)
-  * Ridge-Regression  – lineares Modell auf allen Features (monatlich neu trainiert)
+Builds the feature matrix (features.py), stores it under data/processed/features.csv and
+evaluates simple reference models on the holdout (from TEST_START):
+  * Persistence 24 h   – price tomorrow = price today at the same hour
+  * Persistence 168 h  – price tomorrow = price one week ago at the same hour
+  * Profile 14 days    – mean of the same hour over the last 14 days, separately for weekday/weekend
+                         (corresponds to the current fallback forecast in the calculator, api/app/models/tariff_forecast.py)
+  * Ridge regression   – linear model on all features (retrained monthly)
 
-Aufruf:  .venv/bin/python 03_baseline.py
+Usage:  .venv/bin/python 03_baseline.py
 """
 
 from __future__ import annotations
@@ -44,26 +44,26 @@ def main() -> None:
     df = processed_hourly()
     X = build(df)
     X.to_csv(PROCESSED / "features.csv")
-    print(f"Feature-Matrix: {X.shape[0]} Stunden × {len(feature_columns(X))} Features")
+    print(f"Feature matrix: {X.shape[0]} hours × {len(feature_columns(X))} features")
 
     y = X["y"]
     test = y[(y.index >= TEST_START) & y.notna()]
     forecasts = {
-        "Persistenz 24 h": X["lag_ch_24"],
-        "Persistenz 168 h": X["lag_ch_168"],
-        "Profil 14 Tage": profile_forecast(y),
-        "Ridge-Regression": walk_forward_ridge(X),
+        "Persistence 24 h": X["lag_ch_24"],
+        "Persistence 168 h": X["lag_ch_168"],
+        "Profile 14 days": profile_forecast(y),
+        "Ridge regression": walk_forward_ridge(X),
     }
     rows = []
     for name, pred in forecasts.items():
-        rows.append({"Modell": name, **metrics(test, pred.reindex(test.index))})
+        rows.append({"Model": name, **metrics(test, pred.reindex(test.index))})
     table = pd.DataFrame(rows)
     table.to_csv(OUT / "metrics.csv", index=False, float_format="%.3f")
     pd.DataFrame({"actual": test, **{k: v.reindex(test.index) for k, v in forecasts.items()}}) \
         .to_csv(OUT / "predictions.csv")
 
-    text = (f"# Baselines (Holdout {test.index.min():%Y-%m-%d} – {test.index.max():%Y-%m-%d}, {len(test)} Stunden)\n\n"
-            f"Mittlerer Absolutpreis im Holdout: {test.abs().mean():.1f} EUR/MWh\n\n"
+    text = (f"# Baselines (Holdout {test.index.min():%Y-%m-%d} – {test.index.max():%Y-%m-%d}, {len(test)} hours)\n\n"
+            f"Mean absolute price in the holdout: {test.abs().mean():.1f} EUR/MWh\n\n"
             + table.to_markdown(index=False, floatfmt=".2f") + "\n")
     (OUT / "summary.md").write_text(text)
     print(text)

@@ -1,10 +1,10 @@
 <header class="header" [class.header--scrolled]="scrolled()" [class.header--open]="menuOpen()">
   <div class="header__inner container">
-    <a routerLink="/" class="header__logo" aria-label="AI-EMS – Startseite" (click)="closeMenu()">
+    <a routerLink="/" class="header__logo" aria-label="AI-EMS – home page" (click)="closeMenu()">
       <app-logo />
     </a>
 
-    <nav class="header__nav" aria-label="Hauptnavigation">
+    <nav class="header__nav" aria-label="Main navigation">
       @for (item of navItems; track item.path) {
         <a
           [routerLink]="item.path"
@@ -15,7 +15,7 @@
           (click)="closeMenu()"
         >{{ item.label }}</a>
       }
-      <a routerLink="/rechner" target="_blank" rel="noopener" class="header__cta" (click)="closeMenu()">Rechner öffnen</a>
+      <a routerLink="/calculator" target="_blank" rel="noopener" class="header__cta" (click)="closeMenu()">Open calculator</a>
     </nav>
 
     <app-theme-toggle class="header__theme" />
@@ -24,7 +24,7 @@
       type="button"
       class="header__burger"
       [attr.aria-expanded]="menuOpen()"
-      aria-label="Menü öffnen oder schliessen"
+      aria-label="Open or close menu"
       (click)="toggleMenu()"
     >
       <span></span>

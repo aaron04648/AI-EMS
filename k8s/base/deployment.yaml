@@ -33,7 +33,7 @@ spec:
         - name: tmp
           emptyDir: {}
       containers:
-        # Webseite (nginx) – liefert SPA und /data/*.json aus
+        # Website (nginx) – serves the SPA and /data/*.json
         - name: web
           image: ghcr.io/aaron04648/ai-ems-web
           ports:
@@ -66,7 +66,7 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-        # Fetcher – aktualisiert die Snapshots alle INTERVAL_MINUTES
+        # Fetcher – updates the snapshots every INTERVAL_MINUTES
         - name: fetcher
           image: ghcr.io/aaron04648/ai-ems-fetcher
           env:

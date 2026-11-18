@@ -1,4 +1,4 @@
-# Lokaler Produktiv-Cluster (kind) – Ingress auf Port 80/443 des Hosts
+# Local production cluster (kind) – ingress on port 80/443 of the host
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: ai-ems

@@ -6,21 +6,21 @@
           <div class="kpi">
             <span class="kpi__icon" aria-hidden="true">Ø</span>
             <span class="kpi__body">
-              <span class="kpi__label">Ø nächste 24 h</span>
+              <span class="kpi__label">Avg. next 24 h</span>
               <span class="kpi__value">{{ fmt(k.avg) }}<small>€/MWh</small></span>
             </span>
           </div>
           <div class="kpi kpi--low">
             <span class="kpi__icon" aria-hidden="true">↓</span>
             <span class="kpi__body">
-              <span class="kpi__label">Tiefstpreis · {{ dayTime(k.low.t) }}</span>
+              <span class="kpi__label">Lowest price · {{ dayTime(k.low.t) }}</span>
               <span class="kpi__value">{{ fmt(k.low.v) }}<small>€/MWh</small></span>
             </span>
           </div>
           <div class="kpi kpi--high">
             <span class="kpi__icon" aria-hidden="true">↑</span>
             <span class="kpi__body">
-              <span class="kpi__label">Höchstpreis · {{ dayTime(k.high.t) }}</span>
+              <span class="kpi__label">Highest price · {{ dayTime(k.high.t) }}</span>
               <span class="kpi__value">{{ fmt(k.high.v) }}<small>€/MWh</small></span>
             </span>
           </div>
@@ -28,7 +28,7 @@
       }
 
       <div class="toolbar">
-        <div class="pills" role="tablist" aria-label="Ansicht">
+        <div class="pills" role="tablist" aria-label="View">
           @for (v of views; track v.key) {
             <button
               type="button"
@@ -43,7 +43,7 @@
           }
         </div>
         <span class="meta">
-          Fehler Ø {{ fmt(f.accuracy.nmae, 1) }} % · 7 Tage {{ fmt(f.accuracy.recentNmae, 1) }} % · Stand {{ stand() }}
+          Error avg. {{ fmt(f.accuracy.nmae, 1) }} % · 7 days {{ fmt(f.accuracy.recentNmae, 1) }} % · as of {{ asOf() }}
         </span>
       </div>
 
@@ -61,7 +61,7 @@
                 [xFormat]="hhmm"
                 [tooltipTitle]="dayTime"
                 [xTickCount]="9"
-                ariaLabel="Ist-Preis der letzten 24 Stunden und Prognose der nächsten 24 Stunden in Viertelstunden"
+                ariaLabel="Actual price of the last 24 hours and forecast of the next 24 hours in quarter hours"
               />
             }
           }
@@ -78,7 +78,7 @@
                 [xFormat]="dayLabel"
                 [tooltipTitle]="dayTime"
                 [xTickCount]="9"
-                ariaLabel="Ist-Preis und Prognose der letzten 7 Tage und Prognose der nächsten 24 Stunden"
+                ariaLabel="Actual price and forecast of the last 7 days and forecast of the next 24 hours"
               />
             }
           }
@@ -90,7 +90,7 @@
                 [xFormat]="hhmm"
                 [height]="stageH() - 40"
                 unit="€/MWh"
-                ariaLabel="Beitrag je Markttreiber und Stunde zur Änderung gegenüber dem Vortag"
+                ariaLabel="Contribution per market driver and hour to the change vs. the previous day"
               />
             }
           }
@@ -98,9 +98,9 @@
       </div>
     </div>
 
-    <aside class="dash__list" aria-label="Prognose je Viertelstunde">
+    <aside class="dash__list" aria-label="Forecast per quarter hour">
       <header class="list__head">
-        <span>Prognose</span>
+        <span>Forecast</span>
         <span>€/MWh</span>
       </header>
       <ol class="list">
@@ -117,7 +117,7 @@
       </ol>
     </aside>
   } @else if (error()) {
-    <p class="state state--error">Prognose nicht verfügbar.</p>
+    <p class="state state--error">Forecast not available.</p>
   } @else {
     <p class="state">…</p>
   }

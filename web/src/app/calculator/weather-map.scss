@@ -8,7 +8,7 @@
   position: relative;
   overflow: hidden;
   border-radius: $radius-lg;
-  background: #23386b; // Radar-Look: tiefes Blau, bis die Kacheln geladen sind
+  background: #23386b; // radar look: deep blue until the tiles have loaded
 }
 
 .wm__map {
@@ -16,7 +16,7 @@
   background: #23386b;
 }
 
-// Leaflet-Bedienelemente im ruhigen Stil
+// Leaflet controls in a calm style
 :host ::ng-deep {
   .leaflet-control-zoom a {
     color: $color-ink;
@@ -28,7 +28,7 @@
 
   .wm__overlay {
     image-rendering: auto;
-    // Gitter (0.15°) glätten, damit Wolkenfelder nicht blockig wirken
+    // Smooth the grid (0.15°) so that cloud fields do not look blocky
     filter: blur(5px);
     transition: opacity 0.3s;
   }
@@ -37,7 +37,7 @@
     transition: filter 0.4s ease;
   }
 
-  // Wolken-Ebene: Karte abdunkeln, damit helle Wolken klar hervortreten
+  // Cloud layer: darken the map so that bright clouds stand out clearly
   .wm--clouds .leaflet-tile-pane {
     filter: brightness(0.5) saturate(0.6);
   }
@@ -54,7 +54,7 @@
   }
 }
 
-// Dunkelmodus: Kartenkacheln invertieren
+// Dark mode: invert map tiles
 :host-context([data-theme='dark']) ::ng-deep {
   .leaflet-tile-pane {
     filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
@@ -168,7 +168,7 @@
 .wm__legend-bar {
   height: 8px;
   border-radius: 4px;
-  background-color: #4a5266 !important; // Grund, auf dem die Farben wie auf der Karte wirken
+  background-color: #4a5266 !important; // background on which the colours look as on the map
 }
 
 .wm__legend-ticks {
@@ -190,7 +190,7 @@
   background: rgba(35, 56, 107, 0.6);
 }
 
-// ---------- Zeitachse ----------
+// ---------- Timeline ----------
 .wm__time {
   display: flex;
   align-items: center;

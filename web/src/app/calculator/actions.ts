@@ -1,21 +1,21 @@
 import { SimulationResult } from './calculator.models';
 
-/** Kategoriale Farben in fester Reihenfolge (validierte Dataviz-Palette) */
+/** Categorical colours in fixed order (validated dataviz palette) */
 export const SLOT = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
 
-/** Aktionen der Batterie im Fahrplan – Farbe folgt der Aktion, nie dem Rang */
+/** Battery actions in the schedule – colour follows the action, never the rank */
 export const ACTIONS = {
-  gridCharge: { label: 'Aus dem Netz laden', color: SLOT[0] },
-  solarCharge: { label: 'Mit Solarstrom laden', color: SLOT[3] },
-  supply: { label: 'Batterie versorgt das Haus', color: SLOT[2] },
-  sell: { label: 'Batterie verkauft ins Netz', color: SLOT[1] },
-  idle: { label: 'Batterie ruht', color: 'var(--line)' },
+  gridCharge: { label: 'Charge from the grid', color: SLOT[0] },
+  solarCharge: { label: 'Charge with solar power', color: SLOT[3] },
+  supply: { label: 'Battery supplies the house', color: SLOT[2] },
+  sell: { label: 'Battery sells to the grid', color: SLOT[1] },
+  idle: { label: 'Battery idle', color: 'var(--line)' },
 } as const;
 
 export type Action = keyof typeof ACTIONS;
 export const ACTION_KEYS = Object.keys(ACTIONS) as Action[];
 
-/** Was die Batterie in Viertelstunde i des Fahrplans tut. */
+/** What the battery does in quarter hour i of the schedule. */
 export function actionAt(p: SimulationResult['plan'], i: number): Action {
   if (p.charge[i] > 0.05) {
     return p.grid_import[i] > 0.05 && p.charge[i] > p.pv[i] - p.load[i] + 0.05 ? 'gridCharge' : 'solarCharge';

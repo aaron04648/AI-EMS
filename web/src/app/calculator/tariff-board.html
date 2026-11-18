@@ -8,7 +8,7 @@
       </div>
       <div class="ticker__price">
         <span class="ticker__value">{{ fmt(t.price, 2) }}</span>
-        <span class="ticker__unit">Rp./kWh</span>
+        <span class="ticker__unit">ct/kWh</span>
         @if (t.change !== null) {
           <span class="ticker__change" [style.color]="t.change > 0 ? red : green">
             {{ t.change > 0 ? '▲' : '▼' }} {{ fmt(t.change > 0 ? t.change : -t.change, 2) }}
@@ -16,35 +16,35 @@
           </span>
         }
         <app-help align="right">
-          Bezugstarif EKZ Energie Dynamisch inkl. Netznutzung (400D) und Abgaben, publiziert bis 18 Uhr für den
-          Folgetag. ▲▼ = Tagesdurchschnitt gegenüber dem Vortag.
+          EKZ dynamic energy import tariff incl. grid usage (400D) and levies, published by 18:00 for the
+          following day. ▲▼ = daily average compared with the previous day.
         </app-help>
       </div>
       <span class="ticker__when">{{ t.priceLabel }}</span>
     </header>
 
     <dl class="stats-row">
-      <div><dt>Eröffnung</dt><dd>{{ fmt(t.open, 2) }}</dd></div>
-      <div><dt>Hoch</dt><dd [style.color]="red">{{ fmt(t.high.v, 2) }} <small>{{ hhmm(t.high.t) }}</small></dd></div>
-      <div><dt>Tief</dt><dd [style.color]="green">{{ fmt(t.low.v, 2) }} <small>{{ hhmm(t.low.t) }}</small></dd></div>
-      <div><dt>Ø Tag</dt><dd>{{ fmt(t.avg, 2) }}</dd></div>
-      <div><dt>Spanne</dt><dd>{{ fmt(t.spread, 2) }}</dd></div>
+      <div><dt>Open</dt><dd>{{ fmt(t.open, 2) }}</dd></div>
+      <div><dt>High</dt><dd [style.color]="red">{{ fmt(t.high.v, 2) }} <small>{{ hhmm(t.high.t) }}</small></dd></div>
+      <div><dt>Low</dt><dd [style.color]="green">{{ fmt(t.low.v, 2) }} <small>{{ hhmm(t.low.t) }}</small></dd></div>
+      <div><dt>Day avg.</dt><dd>{{ fmt(t.avg, 2) }}</dd></div>
+      <div><dt>Spread</dt><dd>{{ fmt(t.spread, 2) }}</dd></div>
     </dl>
   }
 
   <!-- ---------- Steuerung ---------- -->
   <div class="board__controls">
-    <div class="pills" role="group" aria-label="Darstellung">
-      <button type="button" [class.is-active]="mode() === 'line'" (click)="mode.set('line')">Linie</button>
-      <button type="button" [class.is-active]="mode() === 'candles'" (click)="mode.set('candles')">Kerzen</button>
+    <div class="pills" role="group" aria-label="Display">
+      <button type="button" [class.is-active]="mode() === 'line'" (click)="mode.set('line')">Line</button>
+      <button type="button" [class.is-active]="mode() === 'candles'" (click)="mode.set('candles')">Candles</button>
     </div>
     <label class="check">
       <input type="checkbox" [checked]="showExport()" (change)="showExport.set(!showExport())" />
-      Einspeisung
+      Feed-in
     </label>
     <app-help align="right">
-      Linie: alle 96 Viertelstunden, grün unter und rot über dem Tagesdurchschnitt (gestrichelt).
-      Kerzen: je Stunde Eröffnung, Hoch, Tief und Schluss – grün, wenn der Preis innerhalb der Stunde steigt.
+      Line: all 96 quarter hours, green below and red above the daily average (dashed).
+      Candles: per hour open, high, low and close – green if the price rises within the hour.
     </app-help>
   </div>
 
@@ -54,7 +54,7 @@
       [attr.viewBox]="'0 0 ' + width() + ' ' + height"
       [attr.height]="height"
       role="img"
-      [attr.aria-label]="'Viertelstunden-Tarife ' + d.label"
+      [attr.aria-label]="'Quarter-hour tariffs ' + d.label"
       (pointermove)="onMove($event)"
       (pointerleave)="hover.set(null)"
     >
@@ -98,7 +98,7 @@
 
       @if (nowX(); as nx) {
         <line class="now" [attr.x1]="nx" [attr.x2]="nx" [attr.y1]="pad.top" [attr.y2]="height - pad.bottom" />
-        <text class="now__label" [attr.x]="nx + 4" [attr.y]="pad.top + 10">jetzt</text>
+        <text class="now__label" [attr.x]="nx + 4" [attr.y]="pad.top + 10">now</text>
       }
 
       @if (hoverInfo(); as h) {
@@ -110,9 +110,9 @@
     @if (hoverInfo(); as h) {
       <div class="tip" [style.left.px]="h.x" [class.tip--left]="h.x > width() * 0.65">
         <strong>{{ h.time }}</strong>
-        <span>{{ fmt(h.price, 2) }} Rp./kWh <em [style.color]="h.diff > 0 ? red : green">{{ h.diff > 0 ? '+' : '' }}{{ fmt(h.diff, 1) }} % ggü. Ø</em></span>
+        <span>{{ fmt(h.price, 2) }} ct/kWh <em [style.color]="h.diff > 0 ? red : green">{{ h.diff > 0 ? '+' : '' }}{{ fmt(h.diff, 1) }} % vs. avg.</em></span>
         @if (h.exp !== null && showExport()) {
-          <span>Einspeisung {{ fmt(h.exp, 2) }} Rp./kWh</span>
+          <span>Feed-in {{ fmt(h.exp, 2) }} ct/kWh</span>
         }
         @if (h.action) {
           <span class="tip__action"><i [style.background]="actions[h.action].color"></i>{{ actions[h.action].label }}</span>
@@ -132,23 +132,23 @@
       @for (k of actionKeys; track k) {
         <li><i [style.background]="actions[k].color"></i>{{ actions[k].label }}</li>
       }
-      <app-help align="right">Fahrplan der MPC für diesen Tag: was die Batterie in jeder Viertelstunde tut.</app-help>
+      <app-help align="right">MPC schedule for this day: what the battery does in each quarter hour.</app-help>
     </ul>
   }
 
   <!-- ---------- Tages-Slider ---------- -->
   <div class="days">
-    <button type="button" class="days__step" aria-label="Vorheriger Tag" [disabled]="index() === 0" (click)="step(-1)">‹</button>
+    <button type="button" class="days__step" aria-label="Previous day" [disabled]="index() === 0" (click)="step(-1)">‹</button>
     <div class="days__track">
-      <input type="range" min="0" [max]="days().length - 1" step="1" [value]="index()" aria-label="Tag wählen" (input)="pick($event)" />
+      <input type="range" min="0" [max]="days().length - 1" step="1" [value]="index()" aria-label="Choose day" (input)="pick($event)" />
       <div class="days__labels">
         @for (day of days(); track day.key; let i = $index) {
           <span [class.is-active]="i === index()">{{ day.short }}</span>
         }
       </div>
     </div>
-    <button type="button" class="days__step" aria-label="Nächster Tag" [disabled]="index() === days().length - 1" (click)="step(1)">›</button>
+    <button type="button" class="days__step" aria-label="Next day" [disabled]="index() === days().length - 1" (click)="step(1)">›</button>
   </div>
 } @else {
-  <p class="empty">Keine publizierten Tarife verfügbar.</p>
+  <p class="empty">No published tariffs available.</p>
 }

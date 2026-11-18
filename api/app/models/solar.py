@@ -1,4 +1,4 @@
-"""Sonnenstand (NOAA-Näherung, Genauigkeit ~0.1°) – vektorisiert für pandas-Zeitindizes."""
+"""Sun position (NOAA approximation, accuracy ~0.1°) – vectorised for pandas time indices."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def sun_position(times: pd.DatetimeIndex, lat: float, lon: float) -> tuple[np.ndarray, np.ndarray]:
-    """Liefert (Elevation, Azimut) in Grad. Azimut-Konvention wie PVGIS: 0 = Süd, -90 = Ost, 90 = West."""
+    """Returns (elevation, azimuth) in degrees. Azimuth convention as in PVGIS: 0 = south, -90 = east, 90 = west."""
     t = times.tz_convert("UTC")
     doy = t.dayofyear.to_numpy()
     hour = (t.hour + t.minute / 60 + t.second / 3600).to_numpy()
@@ -30,7 +30,7 @@ def sun_position(times: pd.DatetimeIndex, lat: float, lon: float) -> tuple[np.nd
     zenith = np.arccos(np.clip(cos_zenith, -1, 1))
     elevation = 90 - np.degrees(zenith)
 
-    # Azimut ab Süd, positiv nach Westen
+    # Azimuth from south, positive towards west
     azimuth = np.degrees(
         np.arctan2(np.sin(hour_angle), np.cos(hour_angle) * np.sin(phi) - np.tan(decl) * np.cos(phi))
     )

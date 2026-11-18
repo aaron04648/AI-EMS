@@ -348,7 +348,7 @@ $sidebar-width: 360px;
   }
 }
 
-// ---------- Hauptbereich ----------
+// ---------- Main area ----------
 .main {
   margin-left: $sidebar-width;
   padding: calc(#{$header-height} + #{$spacing-7}) $spacing-7 $spacing-10;
@@ -421,7 +421,7 @@ $sidebar-width: 360px;
   color: $color-gray-400;
 }
 
-// ---------- Ansicht: Bubbles ----------
+// ---------- View: bubbles ----------
 .bubbles {
   position: sticky;
   top: calc(#{$header-height} + #{$spacing-3});
@@ -475,7 +475,7 @@ $sidebar-width: 360px;
   }
 }
 
-// ---------- Grafikblatt ----------
+// ---------- Chart sheet ----------
 .sheet__title {
   display: flex;
   align-items: center;
@@ -519,7 +519,7 @@ $sidebar-width: 360px;
   opacity: 0.85;
 }
 
-// ---------- Ladeplan ----------
+// ---------- Charging plan ----------
 .timeline {
   display: flex;
   height: 28px;
@@ -590,7 +590,7 @@ $sidebar-width: 360px;
   white-space: nowrap;
 }
 
-// ---------- Tabelle ----------
+// ---------- Table ----------
 .table {
   width: 100%;
   margin-top: $spacing-5;
@@ -625,7 +625,7 @@ $sidebar-width: 360px;
   }
 }
 
-// ---------- Zustände ----------
+// ---------- States ----------
 .alert {
   display: flex;
   flex-direction: column;
@@ -714,7 +714,7 @@ $sidebar-width: 360px;
   margin-top: $spacing-6;
 }
 
-// ---------- Mobile: Sidebar als Overlay ----------
+// ---------- Mobile: sidebar as overlay ----------
 @media (max-width: #{$bp-lg - 1px}) {
   .topbar__toggle,
   .intro__mobile {
