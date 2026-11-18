@@ -1,24 +1,24 @@
-"""Datenaufbereitung für das 48h-Profil (24 h bekannt + 24 h prognostiziert).
+"""Data preparation for the 48 h profile (24 h known + 24 h forecast).
 
-Prognosesituation (D+2):
-    Am Tag D, nach Veröffentlichung der CH-Auktion für D+1 (~12 Uhr), wird jede Stunde t von D+2
-    prognostiziert. Bekannt sind dann:
-      * alle CH- und Nachbarpreise bis Ende D+1            → Preis-Lags ≥ 24 h
-      * Ist-Erzeugung und Handel (ENTSO-E) bis etwa D früh → Ist-Werte nur mit Lag ≥ 72 h
-      * Gas- und CO2-Preis von Tag D                        → Tageswert mit 2 Tagen Versatz
-      * Speicherfüllstand (BFE, wöchentlich, verzögert)     → Stand von vor ≥ 7 Tagen
-      * Wetterprognosen für D+2 (Open-Meteo, Lauf von Tag D)  → direkt als Prädiktoren
+Forecast situation (D+2):
+    On day D, after the Swiss auction for D+1 has been published (~12:00), every hour t of D+2 is
+    forecast. At that time the following is known:
+      * all Swiss and neighbouring prices up to the end of D+1  → price lags ≥ 24 h
+      * actual generation and trade (ENTSO-E) up to early D      → actuals only with lag ≥ 72 h
+      * gas and CO2 price of day D                               → daily value shifted by 2 days
+      * reservoir level (SFOE, weekly, published with delay)     → level of ≥ 7 days ago
+      * weather forecasts for D+2 (Open-Meteo, run of day D)     → used directly as predictors
 
-Die Prognosen der Netzbetreiber (PV, Wind, Last) erscheinen erst am Abend von D+1 und sind zum
-Prognosezeitpunkt nicht bekannt. Stattdessen gehen die Wetterprognosen, die am Tag D schon
-vorlagen, direkt ins Preismodell.
+The TSO forecasts (solar, wind, load) are only published in the evening of D+1 and are unknown at
+forecast time. Instead, the weather forecasts that already existed on day D go directly into the
+price model.
 
-Quellen:
-  * analysis/01_fetch_data.py: Preise, Ist-Erzeugung, Netzbetreiber-Prognosen (energy-charts API,
-    stündlich ab 2024). Fehlt die Datei, startet `load_hourly` den Download (~30 min).
-  * Open-Meteo Previous Runs API: Wetterprognosen, wie sie zwei bzw. drei Tage vorher vorlagen.
-  * energy-charts.info Chart-Daten (nicht in der API): Speicherfüllstand CH, Gas-/CO2-Preise.
-Alle Downloads werden unter data/raw/ zwischengespeichert.
+Sources:
+  * analysis/01_fetch_data.py: prices, actual generation, TSO forecasts (energy-charts API, hourly
+    from 2024). If the file is missing, `load_hourly` starts the download (~30 min).
+  * Open-Meteo Previous Runs API: weather forecasts as they were issued two or three days before.
+  * energy-charts.info chart data (not in the API): Swiss reservoir level, gas/CO2 prices.
+All downloads are cached under data/raw/.
 """
 
 from __future__ import annotations
@@ -43,12 +43,12 @@ START = pd.Timestamp("2024-01-01", tz="UTC")
 CHARTS = "https://www.energy-charts.info/charts"
 OPEN_METEO = "https://previous-runs-api.open-meteo.com/v1/forecast"
 
-TARGET = "Preis CH"
-TARGET_DELTA = "Δ Preis CH zu Vortag"
+TARGET = "Price CH"
+TARGET_DELTA = "Δ Price CH vs previous day"
 
 COUNTRIES = {"ch": "CH", "de": "DE", "fr": "FR", "it": "IT", "at": "AT"}
 
-# Wetterpunkte je Land: Städte (Last, PV) und Windregionen
+# Weather points per country: cities (load, solar) and wind regions
 WEATHER_POINTS: dict[str, dict[str, tuple[float, float]]] = {
     "ch": {"zurich": (47.377, 8.540), "bern": (46.948, 7.447), "geneva": (46.204, 6.143),
            "lugano": (46.004, 8.951), "sion": (46.233, 7.360)},
@@ -66,26 +66,25 @@ WEATHER_POINTS: dict[str, dict[str, tuple[float, float]]] = {
 }
 WEATHER_VARS = ["temperature_2m", "shortwave_radiation", "cloud_cover", "wind_speed_100m", "precipitation"]
 
-# Bis zu dieser UTC-Stunde von D+2 ist der Lauf von zwei Tagen vorher am Tag D um ~12 Uhr schon
-# verfügbar (Lauf um h UTC an Tag D, publiziert ~4 h später). Spätere Stunden nehmen den Lauf
-# von drei Tagen vorher.
+# Up to this UTC hour of D+2, the run from two days before is already available at ~12:00 on day D
+# (run at h UTC on day D, published ~4 h later). Later hours use the run from three days before.
 DAY2_MAX_UTC_HOUR = 6
 
 
 # --------------------------------------------------------------------------------------------
-# Laden
+# Loading
 # --------------------------------------------------------------------------------------------
 def load_hourly(path: Path = HOURLY_CSV) -> pd.DataFrame:
-    """Stündlicher Datensatz aus analysis/01_fetch_data.py (Index UTC).
+    """Hourly data set from analysis/01_fetch_data.py (index UTC).
 
-    Fehlt die Datei (z. B. frisch geklontes Repo), wird der Download gestartet (~30 min, die
-    energy-charts-API drosselt). Danach liegt alles im Cache.
+    If the file is missing (e.g. freshly cloned repo), the download is started (~30 min, the
+    energy-charts API throttles requests). Afterwards everything is cached.
     """
     if not path.exists():
         script = ROOT / "analysis" / "01_fetch_data.py"
         venv = ROOT / "analysis" / ".venv" / "bin" / "python"
         python = str(venv) if venv.exists() else sys.executable
-        print(f"{path.relative_to(ROOT)} fehlt – starte {script.relative_to(ROOT)} (~30 min) …")
+        print(f"{path.relative_to(ROOT)} is missing – starting {script.relative_to(ROOT)} (~30 min) …")
         subprocess.run([python, script.name], cwd=script.parent, check=True)
     df = pd.read_csv(path, index_col=0)
     df.index = pd.to_datetime(df.index, utc=True)
@@ -93,7 +92,7 @@ def load_hourly(path: Path = HOURLY_CSV) -> pd.DataFrame:
 
 
 def _fetch_chart(chart: str, file: str, cache: Path) -> list[dict]:
-    """Eine Chart-JSON-Datei von energy-charts.info laden (mit Cache und Backoff bei 429/5xx)."""
+    """Load one chart JSON file from energy-charts.info (cached, with backoff on 429/5xx)."""
     if cache.exists():
         return json.loads(cache.read_text(encoding="utf-8"))
     url = f"{CHARTS}/{chart}/data/{file}"
@@ -110,6 +109,7 @@ def _fetch_chart(chart: str, file: str, cache: Path) -> list[dict]:
 
 
 def _name(series: dict) -> str:
+    # The chart files carry German and English names; the German ones are used as stable keys.
     n = series["name"]
     if isinstance(n, list):
         n = n[0]
@@ -122,32 +122,32 @@ def _frame(series: list[dict]) -> pd.DataFrame:
 
 
 def storage_week(index: pd.DatetimeIndex) -> np.ndarray:
-    """Woche des Jahres 1–52 aus dem Tag des Jahres.
+    """Week of the year 1–52, derived from the day of the year.
 
-    Nicht die ISO-Woche: Diese ordnet Ende Dezember oft schon Woche 1 des Folgejahres zu,
-    wodurch ein Dezemberwert mit dem Januar-Mittel verglichen würde.
+    Not the ISO week: it often assigns the end of December to week 1 of the following year, so a
+    December value would be compared with the January mean.
     """
     return np.minimum((index.tz_convert(TZ).day_of_year.to_numpy() - 1) // 7 + 1, 52)
 
 
 def load_storage_ch(years=range(2015, 2027)) -> pd.DataFrame:
-    """Wöchentlicher Füllstand der Schweizer Speicherseen (BFE via energy-charts), in TWh und %.
+    """Weekly filling level of the Swiss storage lakes (SFOE via energy-charts), in TWh and %.
 
-    `Füllstand Anomalie` = Füllstand in % minus Mittel derselben Kalenderwoche 2015–2023.
-    Der Füllstand selbst ist stark saisonal; erst die Abweichung zeigt, ob mehr oder weniger
-    Wasser als üblich gespeichert ist (Knappheit → höhere Preise im Winter).
+    `Reservoir level anomaly` = level in % minus the mean of the same week 2015–2023. The level
+    itself is strongly seasonal; only the deviation shows whether more or less water than usual is
+    stored (scarcity → higher prices in winter).
     """
     parts = [_frame(_fetch_chart("filling_level", f"ch/year_storage_{y}.json", RAW / "storage_ch" / f"{y}.json"))
              for y in years]
     df = pd.concat(parts).sort_index()
     df = df[~df.index.duplicated(keep="last")]
-    regions = ["Wallis", "Graubünden", "Tessin", "Übrige Schweiz"]
+    regions = ["Wallis", "Graubünden", "Tessin", "Übrige Schweiz"]  # series names in the source file
     out = pd.DataFrame(index=df.index)
-    out["Füllstand TWh"] = df[regions].sum(axis=1, min_count=len(regions))
-    out["Füllstand %"] = 100 * out["Füllstand TWh"] / df["Ganze Schweiz max. Speicher"]
+    out["Reservoir level TWh"] = df[regions].sum(axis=1, min_count=len(regions))
+    out["Reservoir level %"] = 100 * out["Reservoir level TWh"] / df["Ganze Schweiz max. Speicher"]
     week = storage_week(out.index)
-    clim = out.loc[out.index.year <= 2023, "Füllstand %"].groupby(week[out.index.year <= 2023]).mean()
-    out["Füllstand Anomalie"] = out["Füllstand %"] - clim.reindex(week).to_numpy()
+    clim = out.loc[out.index.year <= 2023, "Reservoir level %"].groupby(week[out.index.year <= 2023]).mean()
+    out["Reservoir level anomaly"] = out["Reservoir level %"] - clim.reindex(week).to_numpy()
     return out.dropna()
 
 
@@ -161,10 +161,11 @@ def _slug(name: str) -> str:
 
 
 def load_warmup_2023() -> pd.DataFrame:
-    """Dezember 2023 für die Spalten, aus denen Lags berechnet werden (gleiche Namen wie `load_hourly`).
+    """December 2023 for the columns the lags are computed from (same names as `load_hourly`).
 
-    Ohne diese Vorlaufdaten wären die ersten Stunden 2024 leer: Lag 168h braucht die Woche davor,
-    die Ist-Werte mit Lag 72h die letzten drei Tage 2023. Quelle wie analysis/01_fetch_data.py.
+    Without this lead-in, the first hours of 2024 would be empty: the 168 h lag needs the week
+    before, and the actuals with a 72 h lag need the last three days of 2023. Same source as
+    analysis/01_fetch_data.py.
     """
     cache = ROOT / "data" / "raw" / "energy_charts_api" / "warmup_2023-12.csv"
     if cache.exists():
@@ -176,7 +177,7 @@ def load_warmup_2023() -> pd.DataFrame:
     def get(endpoint: str, **params) -> dict:
         for attempt in range(6):
             r = requests.get(f"{EC_API}/{endpoint}", params={**params, **period}, timeout=120)
-            time.sleep(5)  # energy-charts drosselt
+            time.sleep(5)  # energy-charts throttles requests
             if r.status_code == 200:
                 return r.json()
             time.sleep(30 * (attempt + 1))
@@ -205,52 +206,52 @@ def load_warmup_2023() -> pd.DataFrame:
 
 
 def load_fuel_prices(years=range(2023, 2027)) -> pd.DataFrame:
-    """Tageswerte Gas (THE), CO2 (EU-Auktion) und Grenzkosten-Proxy eines Gaskraftwerks (2×Gas + 0.4×CO2)."""
+    """Daily gas (THE) and CO2 (EU auction) prices and the marginal-cost proxy of a gas plant (2×gas + 0.4×CO2)."""
     parts = [_frame(_fetch_chart("price_spot_market", f"de/year_{y}.json", RAW / "spot_market_de" / f"{y}.json"))
              for y in years]
     df = pd.concat(parts).sort_index()
     df = df[~df.index.duplicated(keep="last")]
-    cols = {"Gas (NCG, THE)": "Gaspreis THE", "CO2 Emissionszertifikate, Auktion EU": "CO2-Preis EU",
-            "2 × Gas + 0,4 × CO2 (DE)": "Gaskraftwerk Grenzkosten"}
+    cols = {"Gas (NCG, THE)": "Gas price THE", "CO2 Emissionszertifikate, Auktion EU": "CO2 price EU",
+            "2 × Gas + 0,4 × CO2 (DE)": "Gas plant marginal cost"}  # keys = series names in the source file
     daily = df[list(cols)].rename(columns=cols)
     return daily.groupby(daily.index.tz_convert(TZ).date).mean()
 
 
 # --------------------------------------------------------------------------------------------
-# Wetterprognosen für D+2 (Open-Meteo Previous Runs)
+# Weather forecasts for D+2 (Open-Meteo Previous Runs)
 # --------------------------------------------------------------------------------------------
 def _get_open_meteo(params: dict) -> list[dict]:
-    """GET mit Wiederholung; der Dienst antwortet bei Last manchmal minutenlang nicht."""
+    """GET with retries; under load the service sometimes does not answer for minutes."""
     for attempt in range(6):
         try:
             r = requests.get(OPEN_METEO, params=params, timeout=600)
         except requests.RequestException as exc:
-            print(f"    Open-Meteo: {exc.__class__.__name__}, neuer Versuch …")
+            print(f"    Open-Meteo: {exc.__class__.__name__}, retrying …")
             time.sleep(30 * (attempt + 1))
             continue
         if r.status_code == 200:
-            time.sleep(5)  # Minutenlimit der Gratis-API schonen
+            time.sleep(5)  # respect the per-minute limit of the free API
             try:
                 data = r.json()
-            except ValueError:  # Antwort abgeschnitten
-                print("    Open-Meteo: unvollständige Antwort, neuer Versuch …", flush=True)
+            except ValueError:  # truncated response
+                print("    Open-Meteo: incomplete response, retrying …", flush=True)
                 time.sleep(30 * (attempt + 1))
                 continue
             return data if isinstance(data, list) else [data]
         if r.status_code in (429, 500, 502, 503, 504):
-            print(f"    Open-Meteo: HTTP {r.status_code}, warte …")
+            print(f"    Open-Meteo: HTTP {r.status_code}, waiting …")
             time.sleep(60 * (attempt + 1))
             continue
         r.raise_for_status()
-    raise RuntimeError("Open-Meteo antwortet nicht – später erneut versuchen (Cache bleibt erhalten).")
+    raise RuntimeError("Open-Meteo does not respond – try again later (the cache is kept).")
 
 
 def _fetch_weather_half(start: pd.Timestamp, refresh: bool) -> pd.DataFrame:
-    """Prognosen von 2 und 3 Tagen vorher für alle Punkte und ein Halbjahr.
+    """Forecasts from 2 and 3 days before, for all points and one half-year.
 
-    Der Dienst braucht pro Anfrage mehrere Minuten, deshalb wenige grosse Anfragen. Ein Halbjahr
-    für 35 Punkte zählt bei Open-Meteo als ~450 Abfragen und bleibt so unter dem Minutenlimit (600).
-    Abgeschlossene Halbjahre werden nur einmal geladen, das laufende höchstens einmal pro Tag.
+    The service needs several minutes per request, hence few large requests. A half-year for 35
+    points counts as ~450 calls at Open-Meteo and stays below the per-minute limit (600).
+    Completed half-years are loaded once, the current one at most once per day.
     """
     today = pd.Timestamp.now(tz="UTC").normalize()
     last = start + pd.DateOffset(months=6) - pd.Timedelta(days=1)
@@ -261,8 +262,8 @@ def _fetch_weather_half(start: pd.Timestamp, refresh: bool) -> pd.DataFrame:
     if cache.exists() and not refresh and (complete or cache.stat().st_mtime > time.time() - 86400):
         data = json.loads(cache.read_text(encoding="utf-8"))
     else:
-        print(f"Open-Meteo: lade Wetterprognosen {start:%Y-%m} bis {end:%Y-%m} für {len(keys)} Punkte "
-              "(einige Minuten) …", flush=True)
+        print(f"Open-Meteo: loading weather forecasts {start:%Y-%m} to {end:%Y-%m} for {len(keys)} points "
+              "(several minutes) …", flush=True)
         coords = [WEATHER_POINTS[c][p] for c, p in keys]
         params = {
             "latitude": ",".join(f"{lat}" for lat, _ in coords),
@@ -273,7 +274,7 @@ def _fetch_weather_half(start: pd.Timestamp, refresh: bool) -> pd.DataFrame:
         data = _get_open_meteo(params)
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(data), encoding="utf-8")
-        time.sleep(60)  # Minutenlimit zurücksetzen lassen
+        time.sleep(60)  # let the per-minute limit reset
     frames = {}
     for (country, point), d in zip(keys, data):
         h = dict(d["hourly"])
@@ -283,11 +284,11 @@ def _fetch_weather_half(start: pd.Timestamp, refresh: bool) -> pd.DataFrame:
 
 
 def load_weather_d2(refresh: bool = False) -> pd.DataFrame:
-    """Wetterprognose für jede Stunde, so wie sie am Tag D (2 Tage vor dem Zieltag) um ~12 Uhr vorlag.
+    """Weather forecast for every hour, as it was available on day D (2 days before) at ~12:00.
 
-    Spalten `{land}_{punkt}_{variable}`, Index UTC. Für frühe Stunden (≤ DAY2_MAX_UTC_HOUR) stammt der
-    Wert aus dem Lauf von 2 Tagen vorher, sonst aus dem Lauf von 3 Tagen vorher (der Lauf von 2 Tagen
-    vorher wäre um 12 Uhr noch nicht publiziert).
+    Columns `{country}_{point}_{variable}`, index UTC. For early hours (≤ DAY2_MAX_UTC_HOUR) the
+    value comes from the run of 2 days before, otherwise from the run of 3 days before (the run of
+    2 days before would not yet be published at 12:00).
     """
     halves = pd.date_range(START, pd.Timestamp.now(tz="UTC"), freq="6MS")
     raw = pd.concat([_fetch_weather_half(h, refresh) for h in halves]).sort_index()
@@ -305,31 +306,32 @@ def load_weather_d2(refresh: bool = False) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------------------------
-# Kandidaten-Prädiktoren
+# Candidate predictors
 # --------------------------------------------------------------------------------------------
-# Gruppe je Prädiktor (für Farben und Lesbarkeit der Matrix)
+# Group per predictor (for colours and readability of the matrix)
 GROUPS: dict[str, list[str]] = {
-    "Ziel": [TARGET, TARGET_DELTA],
-    "Preis CH (Lags)": ["CH Lag 24h", "CH Lag 48h", "CH Lag 168h", "CH Mittel Vortag", "CH Mittel 7 Tage"],
-    "Nachbarpreise (Lag 24h)": ["DE Lag 24h", "FR Lag 24h", "IT-Nord Lag 24h", "AT Lag 24h"],
-    "Nachbarpreise gleichzeitig*": ["DE gleichzeitig*", "FR gleichzeitig*", "IT-Nord gleichzeitig*", "AT gleichzeitig*"],
-    "Wetter CH (D+2)": ["Temperatur CH (D+2)", "Einstrahlung CH (D+2)", "Wind 100m CH (D+2)",
-                        "Niederschlag 7 Tage CH"],
-    "Wetter Ausland (D+2)": [f"{v} {c} (D+2)" for c in ("DE", "FR", "IT", "AT")
-                             for v in ("Temperatur", "Einstrahlung", "Wind 100m")],
-    "Wasser": ["Füllstand %", "Füllstand Anomalie", "Laufwasser Ist (Lag 72h)", "Speicherwasser Ist (Lag 72h)"],
-    "Kernkraft & Handel": ["Kernkraft CH Ist (Lag 72h)", "Kernkraft FR Ist (Lag 72h)", "Nettoimport CH Ist (Lag 72h)"],
-    "Brennstoffe": ["Gaspreis THE", "CO2-Preis EU", "Gaskraftwerk Grenzkosten"],
-    "Kalender": ["Stunde sin", "Stunde cos", "Wochenende", "Feiertag CH", "Feiertag DE", "Monat sin", "Monat cos"],
+    "Target": [TARGET, TARGET_DELTA],
+    "CH price lags": ["CH lag 24h", "CH lag 48h", "CH lag 168h", "CH mean previous day", "CH mean 7 days"],
+    "Neighbour prices (lag 24h)": ["DE lag 24h", "FR lag 24h", "IT-North lag 24h", "AT lag 24h"],
+    "Neighbour prices same hour*": ["DE same hour*", "FR same hour*", "IT-North same hour*", "AT same hour*"],
+    "Weather CH (D+2)": ["Temperature CH (D+2)", "Radiation CH (D+2)", "Wind 100m CH (D+2)",
+                         "Precipitation 7 days CH"],
+    "Weather abroad (D+2)": [f"{v} {c} (D+2)" for c in ("DE", "FR", "IT", "AT")
+                             for v in ("Temperature", "Radiation", "Wind 100m")],
+    "Hydro": ["Reservoir level %", "Reservoir level anomaly", "Run-of-river actual (lag 72h)",
+              "Storage hydro actual (lag 72h)"],
+    "Nuclear & trade": ["Nuclear CH actual (lag 72h)", "Nuclear FR actual (lag 72h)", "Net import CH actual (lag 72h)"],
+    "Fuels": ["Gas price THE", "CO2 price EU", "Gas plant marginal cost"],
+    "Calendar": ["Hour sin", "Hour cos", "Weekend", "Holiday CH", "Holiday DE", "Month sin", "Month cos"],
 }
 GROUP_OF = {c: g for g, cols in GROUPS.items() for c in cols}
 
 
 def build_candidates(df: pd.DataFrame, storage: pd.DataFrame, fuel: pd.DataFrame,
                      weather: pd.DataFrame) -> pd.DataFrame:
-    """Alle Kandidaten-Prädiktoren als stündliche Tabelle (Index UTC), mit den Lags der D+2-Situation.
+    """All candidate predictors as an hourly table (index UTC), with the lags of the D+2 situation.
 
-    `weather` = Ergebnis von `load_weather_d2` (Wetterprognose, wie sie am Tag D vorlag).
+    `weather` = result of `load_weather_d2` (weather forecast as available on day D).
     """
     df = df.rename_axis("time_utc")
     X = pd.DataFrame(index=df.index)
@@ -340,62 +342,62 @@ def build_candidates(df: pd.DataFrame, storage: pd.DataFrame, fuel: pd.DataFrame
     X[TARGET] = p
     X[TARGET_DELTA] = p - p.shift(24)
 
-    # Preis-Lags: für eine Stunde in D+2 ist D+1 vollständig bekannt
+    # Price lags: for an hour in D+2, D+1 is fully known
     for lag in (24, 48, 168):
-        X[f"CH Lag {lag}h"] = p.shift(lag)
+        X[f"CH lag {lag}h"] = p.shift(lag)
     daily = p.groupby(date.values).mean()
-    X["CH Mittel Vortag"] = (date - pd.Timedelta(days=1)).map(daily).to_numpy()
-    X["CH Mittel 7 Tage"] = (date - pd.Timedelta(days=1)).map(daily.rolling(7).mean()).to_numpy()
+    X["CH mean previous day"] = (date - pd.Timedelta(days=1)).map(daily).to_numpy()
+    X["CH mean 7 days"] = (date - pd.Timedelta(days=1)).map(daily.rolling(7).mean()).to_numpy()
 
-    for key, label in (("de", "DE"), ("fr", "FR"), ("it", "IT-Nord"), ("at", "AT")):
-        X[f"{label} Lag 24h"] = df[f"price_{key}"].shift(24)
-        X[f"{label} gleichzeitig*"] = df[f"price_{key}"]
+    for key, label in (("de", "DE"), ("fr", "FR"), ("it", "IT-North"), ("at", "AT")):
+        X[f"{label} lag 24h"] = df[f"price_{key}"].shift(24)
+        X[f"{label} same hour*"] = df[f"price_{key}"]
 
-    # Wetterprognose D+2: Mittel der Punkte je Land
+    # Weather forecast for D+2: mean of the points per country
     wx = weather.reindex(df.index)
-    names = {"temperature_2m": "Temperatur", "shortwave_radiation": "Einstrahlung", "wind_speed_100m": "Wind 100m"}
+    names = {"temperature_2m": "Temperature", "shortwave_radiation": "Radiation", "wind_speed_100m": "Wind 100m"}
     for key, label in COUNTRIES.items():
         for var, name in names.items():
-            X[f"{name} {label} (D+2)"] = wx[[f"{key}_{p}_{var}" for p in WEATHER_POINTS[key]]].mean(axis=1)
-    X["Niederschlag CH"] = wx[[f"ch_{p}_precipitation" for p in WEATHER_POINTS["ch"]]].mean(axis=1)
-    X["Niederschlag 7 Tage CH"] = X.pop("Niederschlag CH").rolling(168, min_periods=24).sum()
+            X[f"{name} {label} (D+2)"] = wx[[f"{key}_{pt}_{var}" for pt in WEATHER_POINTS[key]]].mean(axis=1)
+    rain = wx[[f"ch_{pt}_precipitation" for pt in WEATHER_POINTS["ch"]]].mean(axis=1)
+    X["Precipitation 7 days CH"] = rain.rolling(168, min_periods=24).sum()
 
-    # Speicherfüllstand: Stand von vor mindestens 7 Tagen (BFE publiziert verzögert)
-    st = storage[["Füllstand %", "Füllstand Anomalie"]].copy()
+    # Reservoir level: value of at least 7 days ago (SFOE publishes with a delay)
+    st = storage[["Reservoir level %", "Reservoir level anomaly"]].copy()
     st.index = st.index + pd.Timedelta(days=7)
     X = pd.merge_asof(X.reset_index(), st.reset_index(names="t").sort_values("t"),
                       left_on="time_utc", right_on="t", direction="backward").drop(columns="t").set_index("time_utc")
 
-    # Ist-Werte nur mit Lag 72 h
-    X["Laufwasser Ist (Lag 72h)"] = df["act_ch_hydro_run_of_river"].shift(72)
-    X["Speicherwasser Ist (Lag 72h)"] = df["act_ch_hydro_water_reservoir"].shift(72)
-    X["Kernkraft CH Ist (Lag 72h)"] = df["act_ch_nuclear"].shift(72)
-    X["Kernkraft FR Ist (Lag 72h)"] = df["act_fr_nuclear"].shift(72)
-    X["Nettoimport CH Ist (Lag 72h)"] = df["cbet_ch_sum"].shift(72)
+    # Actuals only with a 72 h lag
+    X["Run-of-river actual (lag 72h)"] = df["act_ch_hydro_run_of_river"].shift(72)
+    X["Storage hydro actual (lag 72h)"] = df["act_ch_hydro_water_reservoir"].shift(72)
+    X["Nuclear CH actual (lag 72h)"] = df["act_ch_nuclear"].shift(72)
+    X["Nuclear FR actual (lag 72h)"] = df["act_fr_nuclear"].shift(72)
+    X["Net import CH actual (lag 72h)"] = df["cbet_ch_sum"].shift(72)
 
-    # Gas/CO2: Tageswert von Tag D (2 Tage vor dem Zieltag)
+    # Gas/CO2: daily value of day D (2 days before the target day)
     for col in fuel:
         X[col] = (date - pd.Timedelta(days=2)).map(fuel[col]).to_numpy()
 
-    # Kalender (Lokalzeit)
+    # Calendar (local time)
     years = range(local.year.min(), local.year.max() + 1)
     ch_hol = holidays.country_holidays("CH", subdiv="ZH", years=years)
     de_hol = holidays.country_holidays("DE", years=years)
-    X["Stunde sin"], X["Stunde cos"] = np.sin(2 * np.pi * local.hour / 24), np.cos(2 * np.pi * local.hour / 24)
-    X["Wochenende"] = (local.day_of_week >= 5).astype(int)
-    X["Feiertag CH"] = pd.Index(local.date).map(lambda d: d in ch_hol).astype(int)
-    X["Feiertag DE"] = pd.Index(local.date).map(lambda d: d in de_hol).astype(int)
-    X["Monat sin"], X["Monat cos"] = np.sin(2 * np.pi * (local.month - 1) / 12), np.cos(2 * np.pi * (local.month - 1) / 12)
+    X["Hour sin"], X["Hour cos"] = np.sin(2 * np.pi * local.hour / 24), np.cos(2 * np.pi * local.hour / 24)
+    X["Weekend"] = (local.day_of_week >= 5).astype(int)
+    X["Holiday CH"] = pd.Index(local.date).map(lambda d: d in ch_hol).astype(int)
+    X["Holiday DE"] = pd.Index(local.date).map(lambda d: d in de_hol).astype(int)
+    X["Month sin"], X["Month cos"] = np.sin(2 * np.pi * (local.month - 1) / 12), np.cos(2 * np.pi * (local.month - 1) / 12)
 
     order = [c for cols in GROUPS.values() for c in cols]
     return X[order]
 
 
 def tso_features(df: pd.DataFrame) -> pd.DataFrame:
-    """PV, Wind und Residuallast aus der Netzbetreiber-Prognose für den Folgetag.
+    """Solar, wind and residual load from the TSO forecast for the next day.
 
-    Nur für den Vergleich im Vorabtest: Für eine Prognose von D+2 wäre diese Prognose noch nicht
-    publiziert (sie erscheint am Abend von D+1).
+    Only for the comparison in the pretest: for a D+2 forecast this forecast would not yet be
+    published (it appears in the evening of D+1).
     """
     def part(c: str, kinds: list[str]) -> pd.Series:
         cols = [f"fc_{c}_{k}" for k in kinds if f"fc_{c}_{k}" in df]
@@ -404,142 +406,140 @@ def tso_features(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
     for c, label in COUNTRIES.items():
         load, pv, wind = part(c, ["load"]), part(c, ["solar"]), part(c, ["wind_onshore", "wind_offshore"])
-        out[f"Residuallast {label} TSO"] = load - pv - wind
-        out[f"PV {label} TSO"], out[f"Wind {label} TSO"] = pv, wind
+        out[f"Residual load {label} TSO"] = load - pv - wind
+        out[f"Solar {label} TSO"], out[f"Wind {label} TSO"] = pv, wind
     return out
 
 
 def fill_gaps(X: pd.DataFrame, max_gap_h: int = 168) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Füllt kurze Lücken mit dem Wert derselben Stunde am Vortag, sonst der Vorwoche.
+    """Fill short gaps with the value of the same hour on the previous day, otherwise the previous week.
 
-    Nur Lücken bis `max_gap_h` Stunden am Stück werden gefüllt; längere Blöcke (z. B. die Wochen
-    vor dem Start der Open-Meteo-Prognosen) bleiben leer, weil ein Vortageswert dort nur erfunden
-    wäre. Zielgrössen werden nie gefüllt. Rückgabe: (gefüllte Tabelle, Bericht je Spalte).
+    Only gaps of up to `max_gap_h` consecutive hours are filled; longer blocks (e.g. the weeks
+    before the Open-Meteo forecasts start) stay empty, because a previous-day value would only be
+    invented there. Targets are never filled. Returns (filled table, report per column).
     """
     out = X.copy()
     rows = []
     for col in X:
         s = X[col]
-        if GROUP_OF.get(col) == "Ziel" or not s.isna().any():
+        if GROUP_OF.get(col) == "Target" or not s.isna().any():
             continue
         na = s.isna()
         run = (na != na.shift()).cumsum()
         run_len = na.groupby(run).transform("sum")
         fillable = na & (run_len <= max_gap_h)
         filled = s.copy()
-        for _ in range(max_gap_h // 24 + 1):  # Vortag, bei längeren Lücken wiederholt
+        for _ in range(max_gap_h // 24 + 1):  # previous day, repeated for longer gaps
             filled = filled.where(~(fillable & filled.isna()), filled.shift(24))
         by_day = int((fillable & filled.notna()).sum())
         filled = filled.where(~(fillable & filled.isna()), filled.shift(168))
         out[col] = filled
-        rows.append({"Prädiktor": col, "fehlend": int(na.sum()), "Vortag": by_day,
-                     "Vorwoche": int((fillable & filled.notna()).sum()) - by_day,
-                     "bleibt leer": int(filled.isna().sum())})
-    return out, pd.DataFrame(rows).set_index("Prädiktor")
+        rows.append({"Predictor": col, "missing": int(na.sum()), "previous day": by_day,
+                     "previous week": int((fillable & filled.notna()).sum()) - by_day,
+                     "still empty": int(filled.isna().sum())})
+    return out, pd.DataFrame(rows).set_index("Predictor")
 
 
 # --------------------------------------------------------------------------------------------
-# Beschreibung und Entscheid je Prädiktor
+# Description and decision per predictor
 # --------------------------------------------------------------------------------------------
-# Typ, Einheit/Wertebereich, Erklärung, verfügbar als
+_FOREIGN = {"DE": ("Germany", 9, " (incl. North Sea)"), "FR": ("France", 8, ""),
+            "IT": ("Italy", 8, ""), "AT": ("Austria", 5, "")}
+
+# Type, unit/range, meaning, available as
 PREDICTOR_INFO: dict[str, tuple[str, str, str, str]] = {
-    "CH Lag 24h": ("stetig", "EUR/MWh", "CH-Preis derselben Stunde am Vortag (D+1, schon bekannt)", "Lag 24 h"),
-    "CH Lag 48h": ("stetig", "EUR/MWh", "CH-Preis derselben Stunde zwei Tage vorher", "Lag 48 h"),
-    "CH Lag 168h": ("stetig", "EUR/MWh", "CH-Preis derselben Stunde eine Woche vorher (gleicher Wochentag)", "Lag 168 h"),
-    "CH Mittel Vortag": ("stetig", "EUR/MWh", "Tagesmittel des CH-Preises am Vortag", "Tag D+1"),
-    "CH Mittel 7 Tage": ("stetig", "EUR/MWh", "Mittel der Tagesmittel der letzten 7 Tage: aktuelles Preisniveau", "bis D+1"),
-    "DE Lag 24h": ("stetig", "EUR/MWh", "Preis Deutschland/Luxemburg derselben Stunde am Vortag", "Lag 24 h"),
-    "FR Lag 24h": ("stetig", "EUR/MWh", "Preis Frankreich derselben Stunde am Vortag", "Lag 24 h"),
-    "IT-Nord Lag 24h": ("stetig", "EUR/MWh", "Preis Norditalien derselben Stunde am Vortag", "Lag 24 h"),
-    "AT Lag 24h": ("stetig", "EUR/MWh", "Preis Österreich derselben Stunde am Vortag", "Lag 24 h"),
-    "DE gleichzeitig*": ("stetig", "EUR/MWh", "Preis Deutschland derselben Stunde (nur Vergleich)", "nicht verfügbar"),
-    "FR gleichzeitig*": ("stetig", "EUR/MWh", "Preis Frankreich derselben Stunde (nur Vergleich)", "nicht verfügbar"),
-    "IT-Nord gleichzeitig*": ("stetig", "EUR/MWh", "Preis Norditalien derselben Stunde (nur Vergleich)", "nicht verfügbar"),
-    "AT gleichzeitig*": ("stetig", "EUR/MWh", "Preis Österreich derselben Stunde (nur Vergleich)", "nicht verfügbar"),
-    "Temperatur CH (D+2)": ("stetig", "°C", "prognostizierte Lufttemperatur für übermorgen, Mittel von 5 CH-Städten (treibt den Verbrauch: Heizen, Kühlen)", "Prognose Tag D"),
-    "Einstrahlung CH (D+2)": ("stetig", "W/m²", "prognostizierte Sonneneinstrahlung für übermorgen, Mittel von 5 CH-Städten (treibt die PV-Produktion)", "Prognose Tag D"),
-    "Wind 100m CH (D+2)": ("stetig", "km/h", "prognostizierte Windgeschwindigkeit auf 100 m Höhe (Nabenhöhe), Mittel von 5 CH-Punkten", "Prognose Tag D"),
-    "Temperatur DE (D+2)": ("stetig", "°C", "prognostizierte Lufttemperatur Deutschland, Mittel von 9 Punkten", "Prognose Tag D"),
-    "Einstrahlung DE (D+2)": ("stetig", "W/m²", "prognostizierte Sonneneinstrahlung Deutschland, Mittel von 9 Punkten", "Prognose Tag D"),
-    "Wind 100m DE (D+2)": ("stetig", "km/h", "prognostizierte Windgeschwindigkeit auf 100 m Deutschland, Mittel von 9 Punkten (inkl. Nordsee)", "Prognose Tag D"),
-    "Temperatur FR (D+2)": ("stetig", "°C", "prognostizierte Lufttemperatur Frankreich, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Einstrahlung FR (D+2)": ("stetig", "W/m²", "prognostizierte Sonneneinstrahlung Frankreich, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Wind 100m FR (D+2)": ("stetig", "km/h", "prognostizierte Windgeschwindigkeit auf 100 m Frankreich, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Temperatur IT (D+2)": ("stetig", "°C", "prognostizierte Lufttemperatur Italien, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Einstrahlung IT (D+2)": ("stetig", "W/m²", "prognostizierte Sonneneinstrahlung Italien, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Wind 100m IT (D+2)": ("stetig", "km/h", "prognostizierte Windgeschwindigkeit auf 100 m Italien, Mittel von 8 Punkten", "Prognose Tag D"),
-    "Temperatur AT (D+2)": ("stetig", "°C", "prognostizierte Lufttemperatur Österreich, Mittel von 5 Punkten", "Prognose Tag D"),
-    "Einstrahlung AT (D+2)": ("stetig", "W/m²", "prognostizierte Sonneneinstrahlung Österreich, Mittel von 5 Punkten", "Prognose Tag D"),
-    "Wind 100m AT (D+2)": ("stetig", "km/h", "prognostizierte Windgeschwindigkeit auf 100 m Österreich, Mittel von 5 Punkten", "Prognose Tag D"),
-    "Niederschlag 7 Tage CH": ("stetig", "mm", "Niederschlagssumme der letzten 7 Tage (Zufluss zu Flüssen und Seen)", "Prognose Tag D"),
-    "Füllstand %": ("Prozent", "0–100 %", "Füllstand der Schweizer Speicherseen in % der Kapazität (BFE)", "Lag 7 Tage"),
-    "Füllstand Anomalie": ("Prozentpunkte", "± pp", "Füllstand minus Mittel derselben Woche 2015–2023: positiv = mehr Wasser als üblich", "Lag 7 Tage"),
-    "Laufwasser Ist (Lag 72h)": ("stetig", "MW", "gemessene Produktion der Flusskraftwerke CH vor 3 Tagen", "Lag 72 h"),
-    "Speicherwasser Ist (Lag 72h)": ("stetig", "MW", "gemessene Produktion der Speicherkraftwerke CH vor 3 Tagen", "Lag 72 h"),
-    "Kernkraft CH Ist (Lag 72h)": ("stetig", "MW", "gemessene Kernkraftproduktion CH vor 3 Tagen; sinkt bei Ausfällen/Revisionen (z. B. Gösgen 2025)", "Lag 72 h"),
-    "Kernkraft FR Ist (Lag 72h)": ("stetig", "MW", "gemessene Kernkraftproduktion Frankreich vor 3 Tagen", "Lag 72 h"),
-    "Nettoimport CH Ist (Lag 72h)": ("stetig", "GW", "Import minus Export der Schweiz vor 3 Tagen (+ = Import)", "Lag 72 h"),
-    "Gaspreis THE": ("stetig", "EUR/MWh", "Erdgaspreis am Handelspunkt THE (Tageswert)", "Tag D"),
-    "CO2-Preis EU": ("stetig", "EUR/t", "Preis eines CO2-Zertifikats (EU-Auktion, Tageswert)", "Tag D"),
-    "Gaskraftwerk Grenzkosten": ("stetig", "EUR/MWh", "2 × Gaspreis + 0.4 × CO2-Preis: Kosten einer MWh aus einem Gaskraftwerk", "Tag D"),
-    "Stunde sin": ("zyklisch", "−1…1", "Tageszeit als Punkt auf einem Kreis (Sinus); 23 Uhr liegt so neben 0 Uhr", "Kalender"),
-    "Stunde cos": ("zyklisch", "−1…1", "Tageszeit als Punkt auf einem Kreis (Kosinus); zusammen mit Sinus eindeutig", "Kalender"),
-    "Wochenende": ("binär", "0/1", "1 an Samstag und Sonntag", "Kalender"),
-    "Feiertag CH": ("binär", "0/1", "1 an Feiertagen im Kanton Zürich", "Kalender"),
-    "Feiertag DE": ("binär", "0/1", "1 an bundesweiten Feiertagen in Deutschland", "Kalender"),
-    "Monat sin": ("zyklisch", "−1…1", "Monat als Punkt auf einem Kreis (Sinus); Dezember liegt so neben Januar", "Kalender"),
-    "Monat cos": ("zyklisch", "−1…1", "Monat als Punkt auf einem Kreis (Kosinus)", "Kalender"),
+    "CH lag 24h": ("continuous", "EUR/MWh", "Swiss price in the same hour on the previous day (D+1, already known)", "lag 24 h"),
+    "CH lag 48h": ("continuous", "EUR/MWh", "Swiss price in the same hour two days earlier", "lag 48 h"),
+    "CH lag 168h": ("continuous", "EUR/MWh", "Swiss price in the same hour one week earlier (same weekday)", "lag 168 h"),
+    "CH mean previous day": ("continuous", "EUR/MWh", "daily mean of the Swiss price on the previous day", "day D+1"),
+    "CH mean 7 days": ("continuous", "EUR/MWh", "mean of the last 7 daily means: current price level", "up to D+1"),
+    "DE lag 24h": ("continuous", "EUR/MWh", "German/Luxembourg price, same hour, previous day", "lag 24 h"),
+    "FR lag 24h": ("continuous", "EUR/MWh", "French price, same hour, previous day", "lag 24 h"),
+    "IT-North lag 24h": ("continuous", "EUR/MWh", "North Italian price, same hour, previous day", "lag 24 h"),
+    "AT lag 24h": ("continuous", "EUR/MWh", "Austrian price, same hour, previous day", "lag 24 h"),
+    "DE same hour*": ("continuous", "EUR/MWh", "German price in the same hour (comparison only)", "not available"),
+    "FR same hour*": ("continuous", "EUR/MWh", "French price in the same hour (comparison only)", "not available"),
+    "IT-North same hour*": ("continuous", "EUR/MWh", "North Italian price in the same hour (comparison only)", "not available"),
+    "AT same hour*": ("continuous", "EUR/MWh", "Austrian price in the same hour (comparison only)", "not available"),
+    "Temperature CH (D+2)": ("continuous", "°C", "forecast air temperature for D+2, mean of 5 Swiss cities (drives consumption: heating, cooling)", "forecast of day D"),
+    "Radiation CH (D+2)": ("continuous", "W/m²", "forecast solar radiation for D+2, mean of 5 Swiss cities (drives solar production)", "forecast of day D"),
+    "Wind 100m CH (D+2)": ("continuous", "km/h", "forecast wind speed at 100 m (hub height), mean of 5 Swiss points", "forecast of day D"),
+    "Precipitation 7 days CH": ("continuous", "mm", "precipitation of the last 7 days (inflow to rivers and lakes)", "forecast of day D"),
+    **{k: v for c, (land, n, extra) in _FOREIGN.items() for k, v in {
+        f"Temperature {c} (D+2)": ("continuous", "°C", f"forecast air temperature {land}, mean of {n} points", "forecast of day D"),
+        f"Radiation {c} (D+2)": ("continuous", "W/m²", f"forecast solar radiation {land}, mean of {n} points", "forecast of day D"),
+        f"Wind 100m {c} (D+2)": ("continuous", "km/h", f"forecast wind speed at 100 m {land}, mean of {n} points{extra}", "forecast of day D"),
+    }.items()},
+    "Reservoir level %": ("percent", "0–100 %", "filling level of the Swiss storage lakes in % of capacity (SFOE)", "lag 7 days"),
+    "Reservoir level anomaly": ("percentage points", "± pp", "filling level minus the 2015–2023 mean of the same week: positive = more water than usual", "lag 7 days"),
+    "Run-of-river actual (lag 72h)": ("continuous", "MW", "measured run-of-river production CH, 3 days earlier", "lag 72 h"),
+    "Storage hydro actual (lag 72h)": ("continuous", "MW", "measured storage-hydro production CH, 3 days earlier", "lag 72 h"),
+    "Nuclear CH actual (lag 72h)": ("continuous", "MW", "measured Swiss nuclear production, 3 days earlier; drops during outages and revisions (e.g. Gösgen 2025)", "lag 72 h"),
+    "Nuclear FR actual (lag 72h)": ("continuous", "MW", "measured French nuclear production, 3 days earlier", "lag 72 h"),
+    "Net import CH actual (lag 72h)": ("continuous", "GW", "Swiss imports minus exports, 3 days earlier (+ = import)", "lag 72 h"),
+    "Gas price THE": ("continuous", "EUR/MWh", "natural gas price at the THE hub (daily)", "day D"),
+    "CO2 price EU": ("continuous", "EUR/t", "price of an EU CO₂ allowance (auction, daily)", "day D"),
+    "Gas plant marginal cost": ("continuous", "EUR/MWh", "2 × gas + 0.4 × CO₂: cost of one MWh from a gas plant", "day D"),
+    "Hour sin": ("cyclic", "−1…1", "hour of the day on a circle (sine); 23:00 lies next to 00:00", "calendar"),
+    "Hour cos": ("cyclic", "−1…1", "hour of the day on a circle (cosine); unique together with sine", "calendar"),
+    "Weekend": ("binary", "0/1", "1 on Saturday and Sunday", "calendar"),
+    "Holiday CH": ("binary", "0/1", "1 on public holidays in the canton of Zurich", "calendar"),
+    "Holiday DE": ("binary", "0/1", "1 on nationwide German public holidays", "calendar"),
+    "Month sin": ("cyclic", "−1…1", "month on a circle (sine); December lies next to January", "calendar"),
+    "Month cos": ("cyclic", "−1…1", "month on a circle (cosine)", "calendar"),
 }
+# Same order as the columns of `build_candidates`
+PREDICTOR_INFO = {c: PREDICTOR_INFO[c] for g, cols in GROUPS.items() if g != "Target" for c in cols}
 
-KEEP = ["CH Lag 24h", "CH Lag 168h", "CH Mittel 7 Tage", "Temperatur CH (D+2)", "Einstrahlung CH (D+2)",
-        "Wind 100m DE (D+2)", "Gaskraftwerk Grenzkosten", "Füllstand Anomalie", "Stunde sin", "Stunde cos",
-        "Wochenende", "Feiertag CH", "Monat sin", "Monat cos"]
-DROP = ["CH Lag 48h", "AT Lag 24h", "IT-Nord Lag 24h", "CH Mittel Vortag", "Gaspreis THE", "Feiertag DE",
-        *[f"{v} {c} (D+2)" for v in ("Temperatur", "Einstrahlung") for c in ("DE", "FR", "IT", "AT")],
-        "Wind 100m CH (D+2)", "Wind 100m IT (D+2)", "Wind 100m AT (D+2)", "Speicherwasser Ist (Lag 72h)",
-        "Füllstand %"]
-NOT_AVAILABLE = ["DE gleichzeitig*", "FR gleichzeitig*", "IT-Nord gleichzeitig*", "AT gleichzeitig*"]
-TEST = ["DE Lag 24h", "FR Lag 24h", "Wind 100m FR (D+2)", "CO2-Preis EU", "Kernkraft CH Ist (Lag 72h)",
-        "Kernkraft FR Ist (Lag 72h)", "Laufwasser Ist (Lag 72h)", "Nettoimport CH Ist (Lag 72h)",
-        "Niederschlag 7 Tage CH"]
-DECISION = {**{c: "behalten" for c in KEEP}, **{c: "weglassen" for c in DROP},
-            **{c: "nicht verfügbar" for c in NOT_AVAILABLE}, **{c: "im Modell testen" for c in TEST}}
+KEEP = ["CH lag 24h", "CH lag 168h", "CH mean 7 days", "Temperature CH (D+2)", "Radiation CH (D+2)",
+        "Wind 100m DE (D+2)", "Gas plant marginal cost", "Reservoir level anomaly", "Hour sin", "Hour cos",
+        "Weekend", "Holiday CH", "Month sin", "Month cos"]
+DROP = ["CH lag 48h", "AT lag 24h", "IT-North lag 24h", "CH mean previous day", "Gas price THE", "Holiday DE",
+        *[f"{v} {c} (D+2)" for v in ("Temperature", "Radiation") for c in ("DE", "FR", "IT", "AT")],
+        "Wind 100m CH (D+2)", "Wind 100m IT (D+2)", "Wind 100m AT (D+2)", "Storage hydro actual (lag 72h)",
+        "Reservoir level %"]
+NOT_AVAILABLE = ["DE same hour*", "FR same hour*", "IT-North same hour*", "AT same hour*"]
+TEST = ["DE lag 24h", "FR lag 24h", "Wind 100m FR (D+2)", "CO2 price EU", "Nuclear CH actual (lag 72h)",
+        "Nuclear FR actual (lag 72h)", "Run-of-river actual (lag 72h)", "Net import CH actual (lag 72h)",
+        "Precipitation 7 days CH"]
+DECISION = {**{c: "keep" for c in KEEP}, **{c: "drop" for c in DROP},
+            **{c: "not available" for c in NOT_AVAILABLE}, **{c: "test in model" for c in TEST}}
 
 
 def predictor_table() -> pd.DataFrame:
-    """Übersicht aller Kandidaten: Gruppe, Typ, Einheit, Erklärung, Verfügbarkeit, Entscheid."""
-    rows = [{"Prädiktor": c, "Gruppe": GROUP_OF[c], "Typ": t, "Einheit": u, "Erklärung": e,
-             "verfügbar als": a, "Entscheid": DECISION[c]} for c, (t, u, e, a) in PREDICTOR_INFO.items()]
-    return pd.DataFrame(rows).set_index("Prädiktor")
+    """Overview of all candidates: group, type, unit, meaning, availability, decision."""
+    rows = [{"Predictor": c, "Group": GROUP_OF[c], "Type": t, "Unit": u, "Meaning": e,
+             "Available as": a, "Decision": DECISION[c]} for c, (t, u, e, a) in PREDICTOR_INFO.items()]
+    return pd.DataFrame(rows).set_index("Predictor")
 
 
 # --------------------------------------------------------------------------------------------
-# Auswahl
+# Selection
 # --------------------------------------------------------------------------------------------
 def redundant_pairs(corr: pd.DataFrame, threshold: float = 0.9) -> pd.DataFrame:
-    """Prädiktor-Paare mit |ρ| ≥ threshold (ohne Zielgrössen)."""
-    feats = [c for c in corr if GROUP_OF[c] != "Ziel"]
+    """Predictor pairs with |ρ| ≥ threshold (without targets)."""
+    feats = [c for c in corr if GROUP_OF[c] != "Target"]
     c = corr.loc[feats, feats]
     mask = np.triu(np.ones(c.shape, dtype=bool), k=1)
     pairs = c.where(mask).stack().rename("ρ").reset_index()
-    pairs.columns = ["Prädiktor A", "Prädiktor B", "ρ"]
+    pairs.columns = ["Predictor A", "Predictor B", "ρ"]
     return pairs[pairs["ρ"].abs() >= threshold].sort_values("ρ", key=np.abs, ascending=False).reset_index(drop=True)
 
 
 def cluster_shortlist(corr: pd.DataFrame, relevance: pd.Series, threshold: float = 0.2) -> pd.DataFrame:
-    """Hierarchisches Clustering mit Distanz 1 − |ρ|; je Cluster wird der relevanteste Prädiktor vorgeschlagen.
+    """Hierarchical clustering with distance 1 − |ρ|; per cluster the most relevant predictor is suggested.
 
-    threshold = 0.2 fasst Prädiktoren mit |ρ| ≥ 0.8 zu einem Cluster zusammen.
+    threshold = 0.2 groups predictors with |ρ| ≥ 0.8 into one cluster.
     """
     from scipy.cluster.hierarchy import fcluster, linkage
     from scipy.spatial.distance import squareform
 
-    feats = [c for c in corr if GROUP_OF[c] != "Ziel"]
+    feats = [c for c in corr if GROUP_OF[c] != "Target"]
     dist = (1 - corr.loc[feats, feats].abs()).to_numpy(copy=True)
     np.fill_diagonal(dist, 0)
-    dist = (dist + dist.T) / 2  # numerisch exakt symmetrisch für squareform
+    dist = (dist + dist.T) / 2  # exactly symmetric for squareform
     labels = fcluster(linkage(squareform(dist, checks=False), "average"), threshold, criterion="distance")
-    out = pd.DataFrame({"Cluster": labels, "Gruppe": [GROUP_OF[f] for f in feats],
-                        "Relevanz": relevance.reindex(feats).to_numpy()}, index=feats)
-    out["Vertreter"] = out.groupby("Cluster")["Relevanz"].transform("max") == out["Relevanz"]
-    return out.sort_values(["Cluster", "Relevanz"], ascending=[True, False])
+    out = pd.DataFrame({"Cluster": labels, "Group": [GROUP_OF[f] for f in feats],
+                        "Relevance": relevance.reindex(feats).to_numpy()}, index=feats)
+    out["Representative"] = out.groupby("Cluster")["Relevance"].transform("max") == out["Relevance"]
+    return out.sort_values(["Cluster", "Relevance"], ascending=[True, False])
