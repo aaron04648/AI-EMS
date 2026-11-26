@@ -27,17 +27,17 @@ interface Day {
 }
 
 const PAD = { top: 16, right: 16, bottom: 26, left: 44 };
-// Theme-Farben (styles.scss): rot = teurer, grün = günstiger
+// Theme colours (styles.scss): red = more expensive, green = cheaper
 const RED = 'var(--up)';
 const GREEN = 'var(--down)';
 
-const dayLabel = new Intl.DateTimeFormat('de-CH', {
+const dayLabel = new Intl.DateTimeFormat('en-CH', {
   timeZone: 'Europe/Zurich',
   weekday: 'long',
   day: 'numeric',
   month: 'long',
 });
-const dayShort = new Intl.DateTimeFormat('de-CH', {
+const dayShort = new Intl.DateTimeFormat('en-CH', {
   timeZone: 'Europe/Zurich',
   weekday: 'short',
   day: 'numeric',
@@ -48,7 +48,7 @@ const hhmm = (t: number) => {
   return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
 };
 
-/** Börsen-Ansicht der 96 Viertelstunden-Tarife eines Tages mit Tages-Slider. */
+/** Exchange view of the 96 quarter-hour tariffs of a day with a day slider. */
 @Component({
   selector: 'app-tariff-board',
   imports: [Help],
@@ -85,7 +85,7 @@ export class TariffBoard {
     });
   }
 
-  /** Vollständige Tage mit publizierten Tarifen */
+  /** Complete days with published tariffs */
   protected readonly days = computed<Day[]>(() => {
     const tr = this.tariffs();
     const plan = this.plan();
@@ -113,7 +113,7 @@ export class TariffBoard {
       }));
   });
 
-  /** Standard: heute (sonst der letzte verfügbare Tag) */
+  /** Default: today (otherwise the last available day) */
   protected readonly index = computed(() => {
     const days = this.days();
     const sel = this.selected();
@@ -139,7 +139,7 @@ export class TariffBoard {
     const low = q.reduce((a, b) => (b.v < a.v ? b : a));
     return {
       price: current ? current.v : q[q.length - 1].v,
-      priceLabel: current ? `Jetzt · ${hhmm(current.t)}` : 'Schluss · 23:45',
+      priceLabel: current ? `Now · ${hhmm(current.t)}` : 'Close · 23:45',
       open: q[0].v,
       high,
       low,
@@ -151,7 +151,7 @@ export class TariffBoard {
     };
   });
 
-  // ---------- Geometrie ----------
+  // ---------- Geometry ----------
   private readonly innerW = computed(() => this.width() - PAD.left - PAD.right);
   private readonly innerH = this.height - PAD.top - PAD.bottom;
 
@@ -181,13 +181,13 @@ export class TariffBoard {
 
   protected readonly yTicks = computed(() => this.domain().ticks.map((t) => ({ v: t, y: this.y(t) })));
   protected readonly xTicks = computed(() => {
-    const every = this.width() < 560 ? 6 : 3; // schmale Bildschirme: weniger Beschriftungen
+    const every = this.width() < 560 ? 6 : 3; // narrow screens: fewer labels
     const hours = Array.from({ length: 24 / every + 1 }, (_, i) => i * every);
     return hours.map((h) => ({ label: `${String(h).padStart(2, '0')}:00`, x: this.x(h * 4) }));
   });
   protected readonly quarterW = computed(() => this.innerW() / 96);
 
-  /** Treppenlinie, eingefärbt nach günstig (unter Ø) und teuer (über Ø) */
+  /** Step line, coloured by cheap (below avg.) and expensive (above avg.) */
   protected readonly segments = computed(() => {
     const d = this.day();
     const t = this.ticker();
@@ -197,7 +197,7 @@ export class TariffBoard {
       x2: this.x(i + 1),
       y: this.y(q.v),
       color: q.v > t.avg ? RED : GREEN,
-      // senkrechter Übergang zum nächsten Wert
+      // vertical transition to the next value
       next: i + 1 < d.quarters.length ? this.y(d.quarters[i + 1].v) : null,
     }));
   });
@@ -227,7 +227,7 @@ export class TariffBoard {
     return path;
   });
 
-  /** Stundenkerzen aus je 4 Viertelstunden */
+  /** Hourly candles from 4 quarter hours each */
   protected readonly candles = computed(() => {
     const d = this.day();
     if (!d) return [];
@@ -244,7 +244,7 @@ export class TariffBoard {
         low: this.y(Math.min(...q)),
         top: this.y(Math.max(open, close)),
         bottom: this.y(Math.min(open, close)),
-        // Börsenkonvention: grün = Kurs steigt innerhalb der Stunde, rot = fällt
+        // Exchange convention: green = price rises within the hour, red = falls
         color: close >= open ? GREEN : RED,
       });
     }

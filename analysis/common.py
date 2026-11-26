@@ -1,4 +1,4 @@
-"""Gemeinsame Pfade und Konstanten für die Analyse-Pipeline (Schritte 01–04)."""
+"""Shared paths and constants for the analysis pipeline (steps 01–04)."""
 
 from __future__ import annotations
 
@@ -15,17 +15,17 @@ OUT = ROOT / "output"
 TZ = "Europe/Zurich"
 START = pd.Timestamp("2024-01-01", tz="UTC")
 
-# Gebotszonen (energy-charts /price): Schweiz + Nachbarn, die den CH-Preis treiben.
+# Bidding zones (energy-charts /price): Switzerland + neighbours that drive the CH price.
 BIDDING_ZONES = {"ch": "CH", "de": "DE-LU", "fr": "FR", "it": "IT-North", "at": "AT"}
 
-# Länder für Ist-Erzeugung (/public_power) und Day-Ahead-Prognosen (/public_power_forecast).
+# Countries for actual generation (/public_power) and day-ahead forecasts (/public_power_forecast).
 POWER_COUNTRIES = ["ch", "de", "fr", "it", "at"]
-# Offshore-Wind nur für Länder mit Meeresküste und publizierter Prognose.
+# Offshore wind only for countries with a coastline and a published forecast.
 FORECASTS = {"ch": ["solar", "wind_onshore", "load"], "de": ["solar", "wind_onshore", "wind_offshore", "load"],
              "fr": ["solar", "wind_onshore", "wind_offshore", "load"], "it": ["solar", "wind_onshore", "load"],
              "at": ["solar", "wind_onshore", "load"]}
 
-# Wetterpunkte für die Open-Meteo-Prognosen (Vortageslauf, d. h. am Vortag verfügbar).
+# Weather points for the Open-Meteo forecasts (previous-day run, i.e. available on the previous day).
 WEATHER_POINTS = {
     "zurich": (47.377, 8.540),
     "bern": (46.948, 7.447),
@@ -39,7 +39,7 @@ WEATHER_VARS = ["temperature_2m", "shortwave_radiation", "cloud_cover", "wind_sp
 
 
 def processed_hourly() -> pd.DataFrame:
-    """Stündlicher Gesamtdatensatz aus Schritt 01 (Index: UTC)."""
+    """Hourly combined dataset from step 01 (index: UTC)."""
     df = pd.read_csv(PROCESSED / "hourly.csv", index_col=0)
     df.index = pd.to_datetime(df.index, utc=True)
     return df
@@ -51,7 +51,7 @@ def out_dir(name: str) -> Path:
     return path
 
 
-# Einheitlicher Grafikstil (Referenzpalette, feste Reihenfolge, dünne Linien, dezentes Raster).
+# Uniform chart style (reference palette, fixed order, thin lines, subtle grid).
 COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 INK, INK_2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 
@@ -74,27 +74,27 @@ def plot_style() -> None:
     })
 
 
-# Evaluation: letzte ~12 Monate als Holdout (ab Umstellung auf 15-min-Day-Ahead im Okt. 2025).
+# Evaluation: last ~12 months as holdout (from the switch to 15 min day-ahead in Oct 2025).
 TEST_START = pd.Timestamp("2025-10-01", tz=TZ).tz_convert("UTC")
 
 
 def profile_forecast(y: pd.Series, days: int = 14) -> pd.Series:
-    """Für jeden Tag D: Mittel der letzten `days` Tage bis D-1, je Stunde und Tagtyp (Werktag/Wochenende)."""
+    """For each day D: mean of the last `days` days up to D-1, per hour and day type (weekday/weekend)."""
     local = y.index.tz_convert(TZ)
     frame = pd.DataFrame({"y": y.values, "date": local.normalize(), "hour": local.hour,
                           "weekend": local.day_of_week >= 5}, index=y.index)
     table = frame.pivot_table(index="date", columns=["weekend", "hour"], values="y")
-    # Je Tagtyp: Tage des anderen Typs sind NaN und fallen aus dem Mittel; shift(1) → nur Vergangenheit
+    # Per day type: days of the other type are NaN and drop out of the mean; shift(1) → past only
     roll = table.rolling(days, min_periods=2).mean().shift(1).stack(level=[0, 1], future_stack=True)
     key = pd.MultiIndex.from_arrays([frame["date"], frame["weekend"], frame["hour"]])
     return pd.Series(roll.reindex(key).to_numpy(), index=y.index)
 
 
 def metrics(y_true: pd.Series, y_pred: pd.Series) -> dict[str, float]:
-    """MAE, normierter MAE (MAE / mittlerer Absolutpreis) und RMSE.
+    """MAE, normalised MAE (MAE / mean absolute price) and RMSE.
 
-    nMAE ist die Zielgrösse "MAE unter 10 %": Ein klassischer MAPE ist bei Preisen nahe 0 bzw.
-    negativen Preisen nicht definiert/explodiert, deshalb wird auf den mittleren Absolutpreis normiert.
+    nMAE is the target metric "MAE below 10 %": a classic MAPE is undefined/explodes for prices near 0 or
+    negative prices, so it is normalised by the mean absolute price.
     """
     pair = pd.concat([y_true, y_pred], axis=1).dropna()
     err = pair.iloc[:, 0] - pair.iloc[:, 1]

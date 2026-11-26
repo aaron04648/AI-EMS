@@ -2,11 +2,11 @@ import { Injectable, resource } from '@angular/core';
 import { ChPrices, Ekz, EuPrices, Meta, PowerMix } from './data.models';
 
 /**
- * Lädt die JSON-Snapshots, die der Fetcher (fetcher/fetch-data.mjs) ablegt.
- * Die Pfade sind relativ zum <base href> – damit funktioniert die Seite
- * unter / (Docker, Kubernetes) ebenso wie unter /AI-EMS/ (GitHub Pages).
+ * Loads the JSON snapshots stored by the fetcher (fetcher/fetch-data.mjs).
+ * The paths are relative to <base href> – so the site works
+ * under / (Docker, Kubernetes) as well as under /AI-EMS/ (GitHub Pages).
  *
- * Jede Datei wird höchstens einmal geladen und von allen Seiten geteilt.
+ * Each file is loaded at most once and shared by all pages.
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -30,7 +30,7 @@ export class DataService {
         }
         return res.json() as Promise<T>;
       });
-      // Fehlgeschlagene Anfragen nicht cachen, damit ein Reload es erneut versucht
+      // Do not cache failed requests so that a reload tries again
       request.catch(() => this.cache.delete(file));
       this.cache.set(file, request);
     }

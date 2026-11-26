@@ -11,7 +11,7 @@ export class App {
   private readonly document = inject(DOCUMENT);
 
   constructor() {
-    // Sanftes Scrollen erst nach dem Seitenaufbau aktivieren (Deep-Links auf Anker)
+    // Enable smooth scrolling only after the page has loaded (deep links to anchors)
     afterNextRender(() => {
       setTimeout(() => this.document.documentElement.classList.add('is-ready'), 500);
     });

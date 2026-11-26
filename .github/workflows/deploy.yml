@@ -1,10 +1,10 @@
 # =============================================================
-# Push auf main →
-#   1. Daten-Snapshot holen (energy-charts.info + EKZ)
-#   2. Images bauen & nach ghcr.io pushen
-#   3. Image-Tags in k8s/overlays/prod setzen → Argo CD rollt aus
-#   4. Webseite auf GitHub Pages veröffentlichen
-# Zusätzlich alle 6 h: frische Daten für GitHub Pages.
+# Push to main →
+#   1. Fetch data snapshot (energy-charts.info + EKZ)
+#   2. Build images & push to ghcr.io
+#   3. Set image tags in k8s/overlays/prod → Argo CD rolls out
+#   4. Publish website on GitHub Pages
+# Additionally every 6 h: fresh data for GitHub Pages.
 # =============================================================
 name: Deploy
 
@@ -30,7 +30,7 @@ env:
 
 jobs:
   data:
-    name: Daten-Snapshot
+    name: Data snapshot
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -38,11 +38,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Daten holen
+      - name: Fetch data
         env:
           OUT_DIR: ${{ github.workspace }}/data
-        # Teilerfolge sind ok – fehlende Dateien werden beim nächsten Lauf nachgeholt
-        run: node fetcher/fetch-data.mjs || echo "::warning::Nicht alle Datensätze konnten geladen werden"
+        # Partial success is ok – missing files are fetched on the next run
+        run: node fetcher/fetch-data.mjs || echo "::warning::Not all datasets could be loaded"
       - uses: actions/upload-artifact@v4
         with:
           name: data
@@ -50,7 +50,7 @@ jobs:
           retention-days: 3
 
   test-api:
-    name: Backend-Tests
+    name: Backend tests
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -66,7 +66,7 @@ jobs:
           python -m pytest -q tests
 
   images:
-    name: Images bauen & pushen
+    name: Build & push images
     if: github.event_name != 'schedule'
     needs: [data, test-api]
     runs-on: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Web-Image
+      - name: Web image
         uses: docker/build-push-action@v6
         with:
           context: web
@@ -95,7 +95,7 @@ jobs:
             ${{ env.WEB_IMAGE }}:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
-      - name: Fetcher-Image
+      - name: Fetcher image
         uses: docker/build-push-action@v6
         with:
           context: fetcher
@@ -105,7 +105,7 @@ jobs:
             ${{ env.FETCHER_IMAGE }}:latest
           cache-from: type=gha,scope=fetcher
           cache-to: type=gha,mode=max,scope=fetcher
-      - name: API-Image
+      - name: API image
         uses: docker/build-push-action@v6
         with:
           context: api
@@ -117,7 +117,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=api
 
   gitops:
-    name: Produktiv-Overlay aktualisieren
+    name: Update production overlay
     needs: images
     runs-on: ubuntu-latest
     permissions:
@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Image-Tags setzen
+      - name: Set image tags
         env:
           TAG: ${{ github.sha }}
           FILE: k8s/overlays/prod/kustomization.yaml
@@ -135,7 +135,7 @@ jobs:
           yq -i '(.images[] | select(.name == strenv(FETCHER_IMAGE))).newTag = strenv(TAG)' "$FILE"
           yq -i '(.images[] | select(.name == strenv(API_IMAGE))).newTag = strenv(TAG)' "$FILE"
           git diff --stat
-      - name: Commit & Push (Argo CD synchronisiert danach automatisch)
+      - name: Commit & push (Argo CD then syncs automatically)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -172,7 +172,7 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx ng build --configuration production --base-href "/${{ github.event.repository.name }}/"
-          # SPA-Deep-Links (/rechner, /analyse) auf GitHub Pages
+          # SPA deep links (/calculator, /analysis) on GitHub Pages
           cp dist/web/browser/index.html dist/web/browser/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

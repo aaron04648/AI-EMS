@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: ai-ems
   annotations:
-    # MPC-Simulationen dauern bis ~1 min
+    # MPC simulations take up to ~1 min
     nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
 spec:
   ingressClassName: nginx

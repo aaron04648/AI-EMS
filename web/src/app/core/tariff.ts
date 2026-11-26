@@ -1,13 +1,13 @@
 import { EkzTariff } from './data.models';
 import { Point, groupBy, localParts, mean, points } from './series';
 
-/** Alle Viertelstunden eines Tages (Schweizer Zeit). */
+/** All quarter hours of a day (Swiss time). */
 export interface TariffDay {
   day: string;
   slots: Point[];
 }
 
-/** Zerlegt einen EKZ-Tarif in vollständige Kalendertage (92–100 Viertelstunden wegen Sommerzeit). */
+/** Splits an EKZ tariff into complete calendar days (92–100 quarter hours due to daylight saving time). */
 export function tariffDays(tariff: EkzTariff): TariffDay[] {
   const byDay = groupBy(points(tariff), (p) => localParts(p.t).day);
   return [...byDay.entries()]
@@ -15,7 +15,7 @@ export function tariffDays(tariff: EkzTariff): TariffDay[] {
     .map(([day, slots]) => ({ day, slots }));
 }
 
-/** Günstigstes zusammenhängendes Zeitfenster einer bestimmten Länge. */
+/** Cheapest contiguous time window of a given length. */
 export function cheapestWindow(slots: Point[], quarters: number): { from: number; to: number; avg: number } | null {
   if (slots.length < quarters) return null;
   let best = { from: 0, to: 0, avg: Infinity };
@@ -29,7 +29,7 @@ export function cheapestWindow(slots: Point[], quarters: number): { from: number
 }
 
 // ---------------------------------------------------------------
-// Lastprofile (Anteil pro Stunde 0–23, Summe = 1)
+// Load profiles (share per hour 0–23, sum = 1)
 // ---------------------------------------------------------------
 
 const normalize = (xs: number[]) => {
@@ -39,24 +39,24 @@ const normalize = (xs: number[]) => {
 
 export type ProfileKey = 'household' | 'ev' | 'heatPump';
 
-/** Vereinfachte, typische Verbrauchsmuster – angelehnt an das Standardlastprofil H0. */
+/** Simplified, typical consumption patterns – based on the standard load profile H0. */
 export const PROFILES: Record<ProfileKey, { label: string; weights: number[] }> = {
   household: {
-    label: 'Haushalt',
+    label: 'Household',
     weights: normalize([
       2.6, 2.2, 2.0, 1.9, 1.9, 2.2, 3.3, 4.5, 4.7, 4.5, 4.4, 4.6, 5.0, 4.7, 4.2, 4.0, 4.2, 5.0, 6.2, 6.4,
       6.0, 5.4, 4.5, 3.5,
     ]),
   },
   ev: {
-    label: 'Elektroauto (Laden nach Feierabend)',
+    label: 'Electric car (charging after work)',
     weights: normalize([
       3, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 4, 14, 18, 17, 14,
       10, 6,
     ]),
   },
   heatPump: {
-    label: 'Wärmepumpe',
+    label: 'Heat pump',
     weights: normalize([
       4.5, 4.5, 4.6, 4.7, 4.9, 5.2, 5.6, 5.4, 4.8, 4.0, 3.5, 3.2, 3.0, 3.0, 3.1, 3.3, 3.6, 4.1, 4.5, 4.6,
       4.6, 4.5, 4.4, 4.4,
@@ -65,11 +65,11 @@ export const PROFILES: Record<ProfileKey, { label: string; weights: number[] }> 
 };
 
 export interface CalcInput {
-  /** Jahresverbrauch je Profil in kWh */
+  /** Annual consumption per profile in kWh */
   consumption: Record<ProfileKey, number>;
-  /** Anteil des Tagesverbrauchs, der in günstige Zeiten verschoben werden kann (0–1) */
+  /** Share of daily consumption that can be shifted to cheap times (0–1) */
   flexShare: number;
-  /** maximale Leistung für verschobene Lasten in kW (z. B. Wallbox 11 kW) */
+  /** maximum power for shifted loads in kW (e.g. wallbox 11 kW) */
   maxPowerKw: number;
 }
 
@@ -78,27 +78,27 @@ export interface CalcResult {
   from: string;
   to: string;
   annualKwh: number;
-  /** Ø bezahlter Preis in Rp./kWh */
+  /** Avg. price paid in ct/kWh */
   avgStandard: number;
   avgDynamic: number;
   avgOptimized: number;
-  /** Jahreskosten in CHF inkl. Grundgebühr */
+  /** Annual cost in CHF incl. base fee */
   costStandard: number;
   costDynamic: number;
   costOptimized: number;
-  /** durchschnittlicher Lastgang (kWh je Viertelstunde) vor/nach der Verschiebung */
+  /** average load curve (kWh per quarter hour) before/after shifting */
   loadBefore: number[];
   loadAfter: number[];
 }
 
-/** Viertelstunden-Lastgang eines Tages aus den Stundenprofilen. */
+/** Quarter-hour load curve of a day from the hourly profiles. */
 function dailyLoad(slots: Point[], input: CalcInput): number[] {
   const perHour = Array(24).fill(0);
   for (const key of Object.keys(PROFILES) as ProfileKey[]) {
     const daily = input.consumption[key] / 365;
     PROFILES[key].weights.forEach((w, h) => (perHour[h] += w * daily));
   }
-  // Stunde auf ihre Viertelstunden verteilen (Sommerzeit-Tage haben 23/25 Stunden)
+  // Distribute each hour to its quarter hours (DST days have 23/25 hours)
   const quartersPerHour = new Map<number, number>();
   for (const s of slots) {
     const h = localParts(s.t).hour;
@@ -110,11 +110,11 @@ function dailyLoad(slots: Point[], input: CalcInput): number[] {
   });
 }
 
-/** Verschiebt den flexiblen Anteil in die günstigsten Viertelstunden des Tages. */
+/** Shifts the flexible share to the cheapest quarter hours of the day. */
 function shiftLoad(load: number[], prices: number[], flexShare: number, maxPowerKw: number): number[] {
   const flexible = load.reduce((a, b) => a + b, 0) * flexShare;
   const shifted = load.map((e) => e * (1 - flexShare));
-  const capacity = maxPowerKw / 4; // kWh pro Viertelstunde
+  const capacity = maxPowerKw / 4; // kWh per quarter hour
   const order = prices.map((p, i) => ({ p, i })).sort((a, b) => a.p - b.p);
   let rest = flexible;
   for (const { i } of order) {
@@ -123,7 +123,7 @@ function shiftLoad(load: number[], prices: number[], flexShare: number, maxPower
     shifted[i] += add;
     rest -= add;
   }
-  // Reicht die Leistung nicht, bleibt der Rest dort, wo er ursprünglich anfiel
+  // If the power is not sufficient, the rest stays where it originally occurred
   if (rest > 1e-9) {
     const scale = rest / flexible;
     load.forEach((e, i) => (shifted[i] += e * flexShare * scale));
@@ -132,10 +132,10 @@ function shiftLoad(load: number[], prices: number[], flexShare: number, maxPower
 }
 
 /**
- * Vergleicht EKZ Standard mit EKZ Dynamisch – einmal mit unverändertem
- * Verbrauch und einmal mit verschobenen flexiblen Lasten. Grundlage sind
- * alle vollständigen Tage, für die beide Tarife vorliegen; das Ergebnis
- * wird auf ein Jahr hochgerechnet.
+ * Compares EKZ standard with EKZ dynamic – once with unchanged
+ * consumption and once with shifted flexible loads. The basis is
+ * all complete days for which both tariffs are available; the result
+ * is extrapolated to one year.
  */
 export function calculate(standard: EkzTariff, dynamic: EkzTariff, input: CalcInput): CalcResult | null {
   const std = new Map(tariffDays(standard).map((d) => [d.day, d.slots]));

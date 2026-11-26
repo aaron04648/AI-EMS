@@ -28,7 +28,7 @@ export class Home {
   private readonly dynamic = this.tariff('dynamic');
   private readonly standard = this.tariff('standard');
 
-  /** Heute (und morgen, sobald publiziert) in Schweizer Zeit */
+  /** Today (and tomorrow, once published) in Swiss time */
   protected readonly today = computed(() => {
     const dyn = this.dynamic();
     const std = this.standard();
@@ -59,14 +59,14 @@ export class Home {
       hasTomorrow,
       x,
       series: [
-        { name: 'EKZ Dynamisch', color: COLOR_DYNAMIC, values: upcoming.map((p) => p.v) },
-        { name: 'EKZ Standard', color: COLOR_STANDARD, values: x.map((t) => valueAt(std, t)) },
+        { name: 'EKZ dynamic', color: COLOR_DYNAMIC, values: upcoming.map((p) => p.v) },
+        { name: 'EKZ standard', color: COLOR_STANDARD, values: x.map((t) => valueAt(std, t)) },
       ],
       bands: window ? [{ from: window.from, to: window.to }] : [],
     };
   });
 
-  /** Ø Day-Ahead der letzten 30 Tage für ausgewählte Gebotszonen */
+  /** Avg. day-ahead of the last 30 days for selected bidding zones */
   protected readonly europe = computed(() => {
     const eu = this.data.euPrices.hasValue() ? this.data.euPrices.value() : null;
     if (!eu) return [];
@@ -79,41 +79,41 @@ export class Home {
   protected readonly drivers = [
     {
       icon: '☀︎',
-      title: 'Sonne drückt den Mittag',
-      text: 'An sonnigen Tagen speisen Millionen Solaranlagen gleichzeitig ein. Das Angebot übersteigt die Nachfrage – mittags fallen die Preise, im Sommer sogar unter null.',
+      title: 'The sun pushes midday down',
+      text: 'On sunny days millions of solar systems feed in at the same time. Supply exceeds demand – prices fall at midday, in summer even below zero.',
     },
     {
       icon: '◐',
-      title: 'Abends wird es teuer',
-      text: 'Wenn die Sonne untergeht und alle kochen, waschen und laden, steigt die Nachfrage. Jetzt müssen teurere Kraftwerke einspringen – der Preis erreicht seine Tagesspitze.',
+      title: 'Evenings get expensive',
+      text: 'When the sun sets and everyone cooks, washes and charges, demand rises. Now more expensive power plants have to step in – the price reaches its daily peak.',
     },
     {
       icon: '≈',
-      title: 'Wasser als Batterie',
-      text: 'Schweizer Speicher- und Pumpspeicherkraftwerke produzieren, wenn der Preis hoch ist, und pumpen, wenn er tief ist. Das glättet die Preise – aber nur im Rahmen ihrer Kapazität.',
+      title: 'Water as a battery',
+      text: 'Swiss reservoir and pumped-storage plants produce when the price is high and pump when it is low. This smooths prices – but only within their capacity.',
     },
     {
       icon: '⇄',
-      title: 'Europa setzt den Preis',
-      text: 'Die Schweiz ist über 40 Grenzleitungen mit Europa verbunden. Gaspreise, Windflauten in Deutschland oder AKW-Revisionen in Frankreich schlagen direkt auf den Schweizer Preis durch.',
+      title: 'Europe sets the price',
+      text: 'Switzerland is connected to Europe via more than 40 cross-border lines. Gas prices, wind lulls in Germany or nuclear plant outages in France pass straight through to the Swiss price.',
     },
   ];
 
   protected readonly steps = [
     {
       n: '1',
-      title: 'Preise für morgen',
-      text: 'EKZ publiziert den dynamischen Tarif täglich bis 18 Uhr für jede Viertelstunde des Folgetags.',
+      title: 'Prices for tomorrow',
+      text: 'EKZ publishes the dynamic tariff daily by 18:00 for every quarter hour of the following day.',
     },
     {
       n: '2',
-      title: 'Verbrauch planen',
-      text: 'Ein Energiemanagement-System lädt das Auto, heizt den Boiler oder startet die Wärmepumpe in den günstigsten Stunden.',
+      title: 'Plan consumption',
+      text: 'An energy management system charges the car, heats the boiler or starts the heat pump in the cheapest hours.',
     },
     {
       n: '3',
-      title: 'Kosten senken',
-      text: 'Wer flexibel ist, zahlt pro kWh weniger – und entlastet gleichzeitig das Netz zu Spitzenzeiten.',
+      title: 'Cut costs',
+      text: 'Being flexible means paying less per kWh – and at the same time relieving the grid at peak times.',
     },
   ];
 

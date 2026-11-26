@@ -14,5 +14,5 @@ USER 1000
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')" || exit 1
-# 2 Worker: Simulationen sind CPU-lastig und blockieren sonst andere Anfragen
+# 2 workers: simulations are CPU-heavy and would otherwise block other requests
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers"]

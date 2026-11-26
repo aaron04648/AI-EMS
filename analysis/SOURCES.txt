@@ -1,0 +1,107 @@
+REFERENCES – AI-EMS: market analysis and 24h price forecast Switzerland
+=========================================================================
+As of / data retrieval: 22 Oct 2026
+Period considered: 01 Jan 2024 to 23 Oct 2026 (hourly, timestamps UTC)
+
+
+A) DATA SOURCES (loaded automatically via API, analysis/01_fetch_data.py)
+-------------------------------------------------------------------------
+
+[1] Energy-Charts REST API, Fraunhofer Institute for Solar Energy Systems ISE, Freiburg.
+    https://api.energy-charts.info/   (Swagger documentation, no API key)
+    License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), original source stated per series.
+    Endpoints used:
+      - /price?bzn=CH | DE-LU | FR | IT-North | AT
+            Day-ahead exchange electricity prices (EUR/MWh), 60 min, or 15 min from 01 Oct 2025.
+            Model target = CH day-ahead.
+      - /public_power?country=ch | de | fr | it | at
+            Public net electricity generation by energy source, load, residual load,
+            renewable share of load and generation (MW or %).
+      - /public_power_forecast?country=..&production_type=solar|wind_onshore|wind_offshore|load
+            &forecast_type=day-ahead
+            Day-ahead forecasts of the grid operators for solar, wind and load (MW).
+            (The primary data comes from the ENTSO-E Transparency Platform, see [6].)
+      - /cbet?country=ch
+            Cross-border physical electricity exchange of Switzerland per neighbouring country (GW).
+    Note: /signal (green power traffic light) only provides the current or next day, no history;
+    for the analysis "Renewable share of load" from /public_power is used instead.
+
+[2] Open-Meteo Previous Runs API (weather forecasts as they were available on the previous day).
+    https://open-meteo.com/en/docs/previous-runs-api
+    Endpoint: https://previous-runs-api.open-meteo.com/v1/forecast  (variables *_previous_day1)
+    Variables: temperature_2m, shortwave_radiation, cloud_cover, wind_speed_100m, precipitation
+    Points: Zurich, Bern, Geneva, Lugano, Sion, Munich, Hamburg.
+    License: CC BY 4.0, "Weather data by Open-Meteo.com" (https://open-meteo.com/en/license).
+    Underlying weather models (best_match): among others MeteoSwiss ICON-CH1/CH2, DWD ICON, ECMWF IFS.
+    MeteoSwiss model data: https://open-meteo.com/en/docs/meteoswiss-api
+
+[3] Swiss public holidays: Python package "holidays" 0.107 (vacanza), canton of Zurich.
+    https://github.com/vacanza/holidays  (MIT license)
+
+
+B) VISUAL ANALYSIS / REFERENCE CHARTS (energy-charts.info, Fraunhofer ISE)
+-------------------------------------------------------------------------
+
+[4] Electricity production and exchange electricity prices Switzerland:
+    https://www.energy-charts.info/charts/power/chart.htm?l=en&c=CH
+    (the same for Germany: https://www.energy-charts.info/charts/power/chart.htm?l=en&c=DE)
+    Annual view with Pronovo data (basis of the EDA in notebooks/01_data_understanding.ipynb):
+    https://www.energy-charts.info/charts/power/chart.htm?l=en&c=CH&source=pronovo&interval=year
+[5] Exchange electricity prices & trading volume (day-ahead 15 min / 60 min):
+    https://www.energy-charts.info/charts/price_volume/chart.htm?l=en&c=CH
+    Annual view (basis of the EDA in notebooks/01_data_understanding.ipynb):
+    https://www.energy-charts.info/charts/price_volume/chart.htm?l=en&c=CH&interval=year
+    Cross-border electricity trading Switzerland:
+    https://www.energy-charts.info/charts/import_export/chart.htm?l=en&c=CH
+    Renewable share of load:
+    https://www.energy-charts.info/charts/renewable_share/chart.htm?l=en&c=CH
+
+
+C) FURTHER (PRIMARY) SOURCES – not used via API, manual CSV download possible
+-------------------------------------------------------------------------
+
+[6] ENTSO-E Transparency Platform (primary source for prices, load and generation forecasts).
+    https://transparency.entsoe.eu/
+    API token only with a (free) account; Python package entsoe-py: https://github.com/EnergieID/entsoe-py
+    CSV exports (login required, "Export Data" per page):
+      - Day-ahead prices:                Transmission > Day-ahead Prices (Bidding Zone CH)
+      - Load forecast:                   Load > Total Load - Day Ahead / Actual (Control Area CH)
+      - Wind/solar forecast:             Generation > Generation Forecasts for Wind and Solar
+      - Generation per energy source:    Generation > Actual Generation per Production Type
+
+[7] Swissgrid – Energy overview Switzerland (load, production, exchange, 15 min, Excel per year):
+    https://www.swissgrid.ch/en/home/operation/grid-data/generation.html
+
+[8] Open Power System Data (OPSD) – cleaned European time series (until 2020):
+    https://open-power-system-data.org/   or https://data.open-power-system-data.org/time_series/
+
+
+D) SOFTWARE
+-------------------------------------------------------------------------
+
+[9]  LightGBM 4.7: Ke, G. et al. (2017). LightGBM: A Highly Efficient Gradient Boosting Decision Tree.
+     Advances in Neural Information Processing Systems 30 (NeurIPS 2017). https://github.com/microsoft/LightGBM
+[10] SHAP 0.54: Lundberg, S. M. & Lee, S.-I. (2017). A Unified Approach to Interpreting Model Predictions.
+     NeurIPS 30.  Lundberg, S. M. et al. (2020). From local explanations to global understanding with
+     explainable AI for trees. Nature Machine Intelligence 2, 56–67. https://github.com/shap/shap
+[11] scikit-learn 1.9 (TimeSeriesSplit, Ridge): Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning
+     in Python. Journal of Machine Learning Research 12, 2825–2830. https://scikit-learn.org
+[12] pandas 3.1, NumPy 2.5, Matplotlib 3.11 (Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment.
+     Computing in Science & Engineering 9(3), 90–95).
+
+
+E) METHODOLOGICAL LITERATURE AND MARKET RULES
+-------------------------------------------------------------------------
+
+[13] Lago, J., Marcjasz, G., De Schutter, B. & Weron, R. (2021). Forecasting day-ahead electricity prices:
+     A review of state-of-the-art algorithms, best practices and an open-access benchmark.
+     Applied Energy 293, 116983. https://doi.org/10.1016/j.apenergy.2021.116983
+     (Feature selection with price lags 24/48/168 h, load/RE forecasts; persistence as baseline; rMAE)
+[14] Weron, R. (2014). Electricity price forecasting: A review of the state-of-the-art with a look into
+     the future. International Journal of Forecasting 30(4), 1030–1081.
+     https://doi.org/10.1016/j.ijforecast.2014.08.001
+[15] Commission Regulation (EU) No 543/2013 of 14 June 2013 on submission and publication of data
+     in electricity markets (Transparency Regulation), Art. 6 and 14 – publication deadlines
+     for load and wind/solar forecasts (day-ahead).  https://eur-lex.europa.eu/eli/reg/2013/543/oj
+[16] EPEX SPOT – Day-ahead market (auction times, Swiss auction 11:00, coupled EU auction 12:00).
+     https://www.epexspot.com/en/market-segments/day-ahead-trading

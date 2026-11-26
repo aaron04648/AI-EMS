@@ -1,4 +1,4 @@
-"""AI-EMS Backend – PV-Prognose, MPC-Batteriesteuerung und Backtest.
+"""AI-EMS backend – PV forecast, MPC battery control and backtest.
 
     uvicorn app.main:app --reload --port 8000
 """
@@ -21,8 +21,8 @@ log = logging.getLogger("ai-ems")
 app = FastAPI(
     title="AI-EMS API",
     version="1.0.0",
-    description="PV-Prognose (PVGIS + MeteoSwiss), statistische Last- und Preisprognose, "
-    "MPC-Batteriesteuerung nach Ruddick et al. (2024) mit EKZ-Tarifen.",
+    description="PV forecast (PVGIS + MeteoSwiss), statistical load and price forecast, "
+    "MPC battery control following Ruddick et al. (2024) with EKZ tariffs.",
     root_path="/api",
 )
 
@@ -37,7 +37,7 @@ def geocode(q: str = Query(..., min_length=2, max_length=80)) -> list[dict]:
     try:
         return geo.search(q)
     except SourceError as err:
-        raise HTTPException(502, f"Ortssuche nicht erreichbar: {err}") from err
+        raise HTTPException(502, f"Location search unreachable: {err}") from err
 
 
 @app.get("/weather-map")
@@ -45,7 +45,7 @@ def weather_map() -> dict:
     try:
         return meteo.weather_grid()
     except SourceError as err:
-        raise HTTPException(502, f"Wetterdaten nicht erreichbar: {err}") from err
+        raise HTTPException(502, f"Weather data unreachable: {err}") from err
 
 
 @app.post("/simulate")
@@ -54,8 +54,8 @@ def run_simulation(req: SimulationRequest) -> dict:
     try:
         result = simulate.run(req)
     except SourceError as err:
-        log.warning("Datenquelle: %s", err)
-        raise HTTPException(502, f"Eine Datenquelle ist nicht erreichbar: {err}") from err
+        log.warning("Data source: %s", err)
+        raise HTTPException(502, f"A data source is unreachable: {err}") from err
     except RuntimeError as err:
         log.warning("Simulation: %s", err)
         raise HTTPException(422, str(err)) from err

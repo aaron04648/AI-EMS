@@ -1,15 +1,15 @@
-"""Statistisches PV-Prognosemodell.
+"""Statistical PV forecast model.
 
-Analog zum LightGBM-Modell im Paper (Ruddick et al. 2024, Abschnitt 3.5.3) wird ein
-Gradient-Boosting-Regressor trainiert – hier jedoch mit Wetterdaten als Eingang, wie gewünscht:
+Analogous to the LightGBM model in the paper (Ruddick et al. 2024, section 3.5.3), a
+gradient boosting regressor is trained – here, however, with weather data as input, as requested:
 
-    Merkmale:  Globalstrahlung (horizontal), Sonnenhöhe, Sonnenazimut, Lufttemperatur
-    Ziel:      PV-Leistung der konkreten Anlage (W pro kWp)
+    Features:  global irradiance (horizontal), sun elevation, sun azimuth, air temperature
+    Target:    PV power of the specific system (W per kWp)
 
-Trainingsdaten sind die PVGIS-Stundenreihen 2020–2023 am Standort (SARAH-3-Satellitendaten).
-Das Modell lernt so die Umrechnung von horizontaler Einstrahlung auf die geneigte, ausgerichtete
-Modulfläche inklusive Temperatur- und Systemverlusten. Angewendet wird es auf die MeteoSwiss-
-Prognose (ICON-CH), die dieselben Grössen liefert.
+Training data are the PVGIS hourly series 2020–2023 at the location (SARAH-3 satellite data).
+The model thus learns the conversion from horizontal irradiance to the tilted, oriented
+module surface including temperature and system losses. It is applied to the MeteoSwiss
+forecast (ICON-CH), which provides the same quantities.
 """
 
 from __future__ import annotations
@@ -37,8 +37,8 @@ class PvModel:
     test_year: int
 
     def predict(self, weather: pd.DataFrame, lat: float, lon: float, kwp: float) -> pd.Series:
-        """PV-Leistung in kW für stündliche Wetterwerte (Strahlung = Mittel der Vorstunde)."""
-        # Sonnenstand zur Intervallmitte (Zeitstempel markiert das Ende der Stunde)
+        """PV power in kW for hourly weather values (irradiance = mean of the previous hour)."""
+        # Sun position at the middle of the interval (timestamp marks the end of the hour)
         elevation, azimuth = sun_position(weather.index - pd.Timedelta(minutes=30), lat, lon)
         x = pd.DataFrame({
             "ghi": weather["ghi"].to_numpy(),
@@ -63,7 +63,7 @@ def get_model(lat: float, lon: float, tilt: float, azimuth: float, loss: float) 
 
     df = pvgis.hourly_series(lat, lon, tilt, azimuth, loss)
     df = df[df["sun_elevation"] > 0].copy()
-    # PVGIS-Werte gelten für die Stunde, beginnend beim Zeitstempel (hh:10) → Sonnenstand zur Mitte
+    # PVGIS values apply to the hour starting at the timestamp (hh:10) → sun position at the middle
     _, df["sun_azimuth"] = sun_position(df.index + pd.Timedelta(minutes=20), lat, lon)
 
     test_year = df.index.year.max()
@@ -82,7 +82,7 @@ def get_model(lat: float, lon: float, tilt: float, azimuth: float, loss: float) 
         train_rows=len(train),
         test_year=int(test_year),
     )
-    # Nach dem Test auf allen Jahren nachtrainieren
+    # After the test, retrain on all years
     model.fit(df[FEATURES], df["p_w_per_kwp"])
 
     with _lock:

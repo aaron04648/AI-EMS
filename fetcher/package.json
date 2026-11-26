@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Holt Strompreise (energy-charts.info) und EKZ-Tarife als JSON-Snapshots",
+  "description": "Fetches electricity prices (energy-charts.info) and EKZ tariffs as JSON snapshots",
   "scripts": {
     "fetch": "node fetch-data.mjs",
     "loop": "node fetch-data.mjs --loop"

@@ -6,9 +6,9 @@ export type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'ai-ems-theme';
 
 /**
- * Hell-/Dunkelmodus. Das Attribut data-theme auf <html> setzt bereits ein Inline-Skript in
- * index.html (gegen Aufblitzen); dieser Service übernimmt es, schaltet um und merkt sich die Wahl.
- * Ohne gespeicherte Wahl folgt die Seite der Systemeinstellung – auch wenn sie sich ändert.
+ * Light/dark mode. The data-theme attribute on <html> is already set by an inline script in
+ * index.html (against flashing); this service takes it over, toggles it and remembers the choice.
+ * Without a stored choice the site follows the system setting – even when it changes.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -34,7 +34,7 @@ export class ThemeService {
       try {
         localStorage.setItem(STORAGE_KEY, theme);
       } catch {
-        // nur Komfort
+        // convenience only
       }
     }
   }
