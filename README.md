@@ -274,54 +274,56 @@ For the same reason, the weather forecasts are also used as **change features** 
 
 **Why sine and cosine?** As a plain number from 0 to 23, 23:00 and 00:00 would be far apart although they are neighbours. Placed on a circle, with sine and cosine together, they lie next to each other. The same holds for December and January.
 
-| # | Predictor (column in the CSV) | Type | Unit | Meaning | Available as | Decision |
-|---|---|---|---|---|---|---|
-| 1 | `CH lag 24h` | continuous | EUR/MWh | Swiss price in the same hour on the previous day (D+1, already known) | lag 24 h | **keep** |
-| 2 | `CH lag 48h` | continuous | EUR/MWh | Swiss price in the same hour two days earlier | lag 48 h | drop |
-| 3 | `CH lag 168h` | continuous | EUR/MWh | Swiss price in the same hour one week earlier (same weekday) | lag 168 h | **keep** |
-| 4 | `CH mean previous day` | continuous | EUR/MWh | daily mean of the Swiss price on the previous day | day D+1 | drop |
-| 5 | `CH mean 7 days` | continuous | EUR/MWh | mean of the last 7 daily means: current price level | up to D+1 | **keep** |
-| 6 | `DE lag 24h` | continuous | EUR/MWh | German/Luxembourg price, same hour, previous day | lag 24 h | test in model |
-| 7 | `FR lag 24h` | continuous | EUR/MWh | French price, same hour, previous day | lag 24 h | test in model |
-| 8 | `IT-North lag 24h` | continuous | EUR/MWh | North Italian price, same hour, previous day | lag 24 h | drop |
-| 9 | `AT lag 24h` | continuous | EUR/MWh | Austrian price, same hour, previous day | lag 24 h | drop |
-| 10 | `DE same hour*` | continuous | EUR/MWh | German price in the same hour (comparison only) | not available | not available |
-| 11 | `FR same hour*` | continuous | EUR/MWh | French price in the same hour (comparison only) | not available | not available |
-| 12 | `IT-North same hour*` | continuous | EUR/MWh | North Italian price in the same hour (comparison only) | not available | not available |
-| 13 | `AT same hour*` | continuous | EUR/MWh | Austrian price in the same hour (comparison only) | not available | not available |
-| 14 | `Temperature CH (D+2)` | continuous | °C | forecast air temperature for D+2, mean of 5 Swiss cities (drives consumption: heating, cooling) | forecast of day D | **keep** |
-| 15 | `Radiation CH (D+2)` | continuous | W/m² | forecast solar radiation for D+2, mean of 5 Swiss cities (drives solar production) | forecast of day D | **keep** |
-| 16 | `Wind 100m CH (D+2)` | continuous | km/h | forecast wind speed at 100 m (hub height), mean of 5 Swiss points | forecast of day D | drop |
-| 17 | `Precipitation 7 days CH` | continuous | mm | precipitation of the last 7 days (inflow to rivers and lakes) | forecast of day D | test in model |
-| 18 | `Temperature DE (D+2)` | continuous | °C | forecast air temperature Germany, mean of 9 points | forecast of day D | drop |
-| 19 | `Radiation DE (D+2)` | continuous | W/m² | forecast solar radiation Germany, mean of 9 points | forecast of day D | drop |
-| 20 | `Wind 100m DE (D+2)` | continuous | km/h | forecast wind speed at 100 m Germany, mean of 9 points (incl. North Sea) | forecast of day D | **keep** |
-| 21 | `Temperature FR (D+2)` | continuous | °C | forecast air temperature France, mean of 8 points | forecast of day D | drop |
-| 22 | `Radiation FR (D+2)` | continuous | W/m² | forecast solar radiation France, mean of 8 points | forecast of day D | drop |
-| 23 | `Wind 100m FR (D+2)` | continuous | km/h | forecast wind speed at 100 m France, mean of 8 points | forecast of day D | test in model |
-| 24 | `Temperature IT (D+2)` | continuous | °C | forecast air temperature Italy, mean of 8 points | forecast of day D | drop |
-| 25 | `Radiation IT (D+2)` | continuous | W/m² | forecast solar radiation Italy, mean of 8 points | forecast of day D | drop |
-| 26 | `Wind 100m IT (D+2)` | continuous | km/h | forecast wind speed at 100 m Italy, mean of 8 points | forecast of day D | drop |
-| 27 | `Temperature AT (D+2)` | continuous | °C | forecast air temperature Austria, mean of 5 points | forecast of day D | drop |
-| 28 | `Radiation AT (D+2)` | continuous | W/m² | forecast solar radiation Austria, mean of 5 points | forecast of day D | drop |
-| 29 | `Wind 100m AT (D+2)` | continuous | km/h | forecast wind speed at 100 m Austria, mean of 5 points | forecast of day D | drop |
-| 30 | `Reservoir level %` | percent | 0–100 % | filling level of the Swiss storage lakes in % of capacity (SFOE) | lag 7 days | drop |
-| 31 | `Reservoir level anomaly` | percentage points | ± pp | filling level minus the 2015–2023 mean of the same week: positive = more water than usual | lag 7 days | **keep** |
-| 32 | `Run-of-river actual (lag 72h)` | continuous | MW | measured run-of-river production CH, 3 days earlier | lag 72 h | test in model |
-| 33 | `Storage hydro actual (lag 72h)` | continuous | MW | measured storage-hydro production CH, 3 days earlier | lag 72 h | drop |
-| 34 | `Nuclear CH actual (lag 72h)` | continuous | MW | measured Swiss nuclear production, 3 days earlier; drops during outages and revisions (e.g. Gösgen 2025) | lag 72 h | test in model |
-| 35 | `Nuclear FR actual (lag 72h)` | continuous | MW | measured French nuclear production, 3 days earlier | lag 72 h | test in model |
-| 36 | `Net import CH actual (lag 72h)` | continuous | GW | Swiss imports minus exports, 3 days earlier (+ = import) | lag 72 h | test in model |
-| 37 | `Gas price THE` | continuous | EUR/MWh | natural gas price at the THE hub (daily) | day D | drop |
-| 38 | `CO2 price EU` | continuous | EUR/t | price of an EU CO₂ allowance (auction, daily) | day D | test in model |
-| 39 | `Gas plant marginal cost` | continuous | EUR/MWh | 2 × gas + 0.4 × CO₂: cost of one MWh from a gas plant | day D | **keep** |
-| 40 | `Hour sin` | cyclic | −1…1 | hour of the day on a circle (sine); 23:00 lies next to 00:00 | calendar | **keep** |
-| 41 | `Hour cos` | cyclic | −1…1 | hour of the day on a circle (cosine); unique together with sine | calendar | **keep** |
-| 42 | `Weekend` | binary | 0/1 | 1 on Saturday and Sunday | calendar | **keep** |
-| 43 | `Holiday CH` | binary | 0/1 | 1 on public holidays in the canton of Zurich | calendar | **keep** |
-| 44 | `Holiday DE` | binary | 0/1 | 1 on nationwide German public holidays | calendar | drop |
-| 45 | `Month sin` | cyclic | −1…1 | month on a circle (sine); December lies next to January | calendar | **keep** |
-| 46 | `Month cos` | cyclic | −1…1 | month on a circle (cosine) | calendar | **keep** |
+The table only describes the candidates. Which of them the model uses is derived in Section 4 from the correlation matrix, the relevance and the clusters (see *Selected predictors for XGBoost*).
+
+| # | Predictor (column in the CSV) | Type | Unit | Meaning | Available as |
+|---|---|---|---|---|---|
+| 1 | `CH lag 24h` | continuous | EUR/MWh | Swiss price in the same hour on the previous day (D+1, already known) | lag 24 h |
+| 2 | `CH lag 48h` | continuous | EUR/MWh | Swiss price in the same hour two days earlier | lag 48 h |
+| 3 | `CH lag 168h` | continuous | EUR/MWh | Swiss price in the same hour one week earlier (same weekday) | lag 168 h |
+| 4 | `CH mean previous day` | continuous | EUR/MWh | daily mean of the Swiss price on the previous day | day D+1 |
+| 5 | `CH mean 7 days` | continuous | EUR/MWh | mean of the last 7 daily means: current price level | up to D+1 |
+| 6 | `DE lag 24h` | continuous | EUR/MWh | German/Luxembourg price, same hour, previous day | lag 24 h |
+| 7 | `FR lag 24h` | continuous | EUR/MWh | French price, same hour, previous day | lag 24 h |
+| 8 | `IT-North lag 24h` | continuous | EUR/MWh | North Italian price, same hour, previous day | lag 24 h |
+| 9 | `AT lag 24h` | continuous | EUR/MWh | Austrian price, same hour, previous day | lag 24 h |
+| 10 | `DE same hour*` | continuous | EUR/MWh | German price in the same hour (comparison only) | not available |
+| 11 | `FR same hour*` | continuous | EUR/MWh | French price in the same hour (comparison only) | not available |
+| 12 | `IT-North same hour*` | continuous | EUR/MWh | North Italian price in the same hour (comparison only) | not available |
+| 13 | `AT same hour*` | continuous | EUR/MWh | Austrian price in the same hour (comparison only) | not available |
+| 14 | `Temperature CH (D+2)` | continuous | °C | forecast air temperature for D+2, mean of 5 Swiss cities (drives consumption: heating, cooling) | forecast of day D |
+| 15 | `Radiation CH (D+2)` | continuous | W/m² | forecast solar radiation for D+2, mean of 5 Swiss cities (drives solar production) | forecast of day D |
+| 16 | `Wind 100m CH (D+2)` | continuous | km/h | forecast wind speed at 100 m (hub height), mean of 5 Swiss points | forecast of day D |
+| 17 | `Precipitation 7 days CH` | continuous | mm | precipitation of the last 7 days (inflow to rivers and lakes) | forecast of day D |
+| 18 | `Temperature DE (D+2)` | continuous | °C | forecast air temperature Germany, mean of 9 points | forecast of day D |
+| 19 | `Radiation DE (D+2)` | continuous | W/m² | forecast solar radiation Germany, mean of 9 points | forecast of day D |
+| 20 | `Wind 100m DE (D+2)` | continuous | km/h | forecast wind speed at 100 m Germany, mean of 9 points (incl. North Sea) | forecast of day D |
+| 21 | `Temperature FR (D+2)` | continuous | °C | forecast air temperature France, mean of 8 points | forecast of day D |
+| 22 | `Radiation FR (D+2)` | continuous | W/m² | forecast solar radiation France, mean of 8 points | forecast of day D |
+| 23 | `Wind 100m FR (D+2)` | continuous | km/h | forecast wind speed at 100 m France, mean of 8 points | forecast of day D |
+| 24 | `Temperature IT (D+2)` | continuous | °C | forecast air temperature Italy, mean of 8 points | forecast of day D |
+| 25 | `Radiation IT (D+2)` | continuous | W/m² | forecast solar radiation Italy, mean of 8 points | forecast of day D |
+| 26 | `Wind 100m IT (D+2)` | continuous | km/h | forecast wind speed at 100 m Italy, mean of 8 points | forecast of day D |
+| 27 | `Temperature AT (D+2)` | continuous | °C | forecast air temperature Austria, mean of 5 points | forecast of day D |
+| 28 | `Radiation AT (D+2)` | continuous | W/m² | forecast solar radiation Austria, mean of 5 points | forecast of day D |
+| 29 | `Wind 100m AT (D+2)` | continuous | km/h | forecast wind speed at 100 m Austria, mean of 5 points | forecast of day D |
+| 30 | `Reservoir level %` | percent | 0–100 % | filling level of the Swiss storage lakes in % of capacity (SFOE) | lag 7 days |
+| 31 | `Reservoir level anomaly` | percentage points | ± pp | filling level minus the 2015–2023 mean of the same week: positive = more water than usual | lag 7 days |
+| 32 | `Run-of-river actual (lag 72h)` | continuous | MW | measured run-of-river production CH, 3 days earlier | lag 72 h |
+| 33 | `Storage hydro actual (lag 72h)` | continuous | MW | measured storage-hydro production CH, 3 days earlier | lag 72 h |
+| 34 | `Nuclear CH actual (lag 72h)` | continuous | MW | measured Swiss nuclear production, 3 days earlier; drops during outages and revisions (e.g. Gösgen 2025) | lag 72 h |
+| 35 | `Nuclear FR actual (lag 72h)` | continuous | MW | measured French nuclear production, 3 days earlier | lag 72 h |
+| 36 | `Net import CH actual (lag 72h)` | continuous | GW | Swiss imports minus exports, 3 days earlier (+ = import) | lag 72 h |
+| 37 | `Gas price THE` | continuous | EUR/MWh | natural gas price at the THE hub (daily) | day D |
+| 38 | `CO2 price EU` | continuous | EUR/t | price of an EU CO₂ allowance (auction, daily) | day D |
+| 39 | `Gas plant marginal cost` | continuous | EUR/MWh | 2 × gas + 0.4 × CO₂: cost of one MWh from a gas plant | day D |
+| 40 | `Hour sin` | cyclic | −1…1 | hour of the day on a circle (sine); 23:00 lies next to 00:00 | calendar |
+| 41 | `Hour cos` | cyclic | −1…1 | hour of the day on a circle (cosine); unique together with sine | calendar |
+| 42 | `Weekend` | binary | 0/1 | 1 on Saturday and Sunday | calendar |
+| 43 | `Holiday CH` | binary | 0/1 | 1 on public holidays in the canton of Zurich | calendar |
+| 44 | `Holiday DE` | binary | 0/1 | 1 on nationwide German public holidays | calendar |
+| 45 | `Month sin` | cyclic | −1…1 | month on a circle (sine); December lies next to January | calendar |
+| 46 | `Month cos` | cyclic | −1…1 | month on a circle (cosine) | calendar |
 
 ### Missing values
 
@@ -450,6 +452,47 @@ Hierarchical clustering with the distance 1 − |ρ| groups candidates with |ρ|
 11. **Holiday DE vs holiday CH (ρ 0.88).** Of 28 holidays, 22 are shared; only 3 are German-only and 3 Swiss-only.
 
 These are pairwise statistics. A tree model can still exploit interactions, for example solar matters only around midday. The list is the starting point for `03_modeling`, where the groups are added step by step and evaluated on a later test period.
+
+### Selected predictors for XGBoost
+
+The three steps and the panels above give the following decision for each of the 46 candidates. This list is the input for `03_modeling.ipynb`: the 14 kept predictors form the base model, and the 9 candidates marked "test in model" are added step by step and kept only if they lower the error on a later test period.
+
+| # | Predictor | Decision | Reason |
+|---|---|---|---|
+| 1 | `CH lag 24h` | **keep** | strongest available signal (ρ 0.88), representative of the price cluster |
+| 2 | `CH lag 48h` | redundant | same as CH lag 24 h (ρ 0.88), lower autocorrelation |
+| 3 | `CH lag 168h` | **keep** | weekly pattern, second-strongest signal (ρ 0.85) |
+| 4 | `CH mean previous day` | redundant | same as CH 7-day mean (ρ 0.89) |
+| 5 | `CH mean 7 days` | **keep** | current price level |
+| 6 | `DE lag 24h` | test in model | in the price cluster, but may add neighbouring information |
+| 7 | `FR lag 24h` | test in model | in the price cluster, but may add neighbouring information |
+| 8 | `IT-North lag 24h` | redundant | same as CH lag 24 h (ρ 0.80) |
+| 9 | `AT lag 24h` | redundant | same as CH lag 24 h (ρ 0.90) |
+| 10–13 | `DE/FR/IT-North/AT same hour*` | not available | fixed in the same auction, unknown at forecast time |
+| 14 | `Temperature CH (D+2)` | **keep** | representative of the temperature cluster (ρ −0.3 with price) |
+| 15 | `Radiation CH (D+2)` | **keep** | representative of the radiation cluster (ρ −0.3 with price) |
+| 16 | `Wind 100m CH (D+2)` | drop | no relationship (\|ρ\| ≤ 0.06) |
+| 17 | `Precipitation 7 days CH` | test in model | weak, slow signal |
+| 18, 21, 24, 27 | `Temperature DE/FR/IT/AT (D+2)` | redundant | same as temperature CH (ρ 0.96–0.98) |
+| 19, 22, 25, 28 | `Radiation DE/FR/IT/AT (D+2)` | redundant | same as radiation CH (ρ 0.96–0.98) |
+| 20 | `Wind 100m DE (D+2)` | **keep** | strongest wind signal for the price change (ρ −0.15) |
+| 23 | `Wind 100m FR (D+2)` | test in model | weak signal for the price change (ρ −0.07) |
+| 26, 29 | `Wind 100m IT/AT (D+2)` | drop | no relationship (\|ρ\| ≤ 0.06) |
+| 30 | `Reservoir level %` | drop | only describes the season (ρ −0.93 with the month), ρ +0.06 with price |
+| 31 | `Reservoir level anomaly` | **keep** | strong level signal (ρ −0.59) |
+| 32 | `Run-of-river actual (lag 72h)` | test in model | weak, slow signal |
+| 33 | `Storage hydro actual (lag 72h)` | drop | no relationship (ρ +0.03), follows the price instead of driving it |
+| 34 | `Nuclear CH actual (lag 72h)` | test in model | slow signal, acts partly as a date stamp |
+| 35 | `Nuclear FR actual (lag 72h)` | test in model | slow signal |
+| 36 | `Net import CH actual (lag 72h)` | test in model | weak signal |
+| 37 | `Gas price THE` | redundant | same as gas-plant marginal cost (ρ 0.98) |
+| 38 | `CO2 price EU` | test in model | slow signal, partly contained in the marginal cost |
+| 39 | `Gas plant marginal cost` | **keep** | price level via the merit order (ρ 0.57) |
+| 40, 41 | `Hour sin`, `Hour cos` | **keep** | daily pattern (non-monotonic, visible in mutual information) |
+| 42 | `Weekend` | **keep** | strongest signal for the price change (ρ −0.34) |
+| 43 | `Holiday CH` | **keep** | holiday effect, representative of the holiday pair |
+| 44 | `Holiday DE` | redundant | same as holiday CH (ρ 0.88) |
+| 45, 46 | `Month sin`, `Month cos` | **keep** | seasonal pattern |
 
 ### Model choice: XGBoost
 
